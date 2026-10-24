@@ -442,11 +442,24 @@ function createNoteCard(plan, day, group) {
   const hasDate = Number.isFinite(calendarDay(day.date));
   const hasExamDate = Number.isFinite(calendarDay(examDate));
 
+  function openCard() {
+    if (noteState(day) === "trash") {
+      showNoteToast("Чтобы внести изменения, восстановите учебную заметку из корзины.");
+      return;
+    }
+    openNoteEditor(plan, day);
+  }
+
   card.dataset.group = group;
   card.dataset.noteId = day.id;
   card.tabIndex = 0;
   card.draggable = currentNotesView === "active";
-  card.setAttribute("aria-label", `${name || "Заметка"}. Открыть.`);
+  card.setAttribute(
+    "aria-label",
+    noteState(day) === "trash"
+      ? `${name || "Заметка"}. Для изменения восстановите из корзины.`
+      : `${name || "Заметка"}. Открыть.`
+  );
   if (card.draggable) card.title = "Перетащите, чтобы изменить порядок";
 
   if (hasDate && !day.quickNote) {
@@ -490,12 +503,12 @@ function createNoteCard(plan, day, group) {
     actions.append(iconAction("В корзину", "trash", () => changeNoteState(plan, day, "trash")));
   }
   card.addEventListener("click", event => {
-    if (!noteWasDragged && !event.target.closest("button")) openNoteEditor(plan, day);
+    if (!noteWasDragged && !event.target.closest("button")) openCard();
   });
   card.addEventListener("keydown", event => {
     if (event.target === card && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault();
-      openNoteEditor(plan, day);
+      openCard();
     }
   });
   card.addEventListener("dragstart", event => {
