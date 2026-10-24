@@ -122,11 +122,33 @@ function noteEntries() {
   }));
 }
 
-function noteWeekdayOrder(day) {
+function noteWeekdayOrder(plan, day) {
   const value = calendarDay(day.date);
-  if (!Number.isFinite(value)) return 7;
-  const weekday = new Date(value * DAY_MS).getUTCDay();
+  const weekday = Number.isFinite(value)
+    ? new Date(value * DAY_MS).getUTCDay()
+    : Array.isArray(plan.weekdays) && plan.weekdays.length
+      ? plan.weekdays[0]
+      : -1;
+  if (weekday < 0) return 7;
   return (weekday + 6) % 7;
+}
+
+function orderNotesAfterCreation() {
+  const activeEntries = noteEntries()
+    .filter(({ day }) => noteState(day) === "active")
+    .map((entry, index) => ({ ...entry, index }));
+
+  activeEntries
+    .sort((left, right) => (
+      noteWeekdayOrder(left.plan, left.day) - noteWeekdayOrder(right.plan, right.day) ||
+      (Number.isFinite(left.day.displayOrder) ? left.day.displayOrder : left.index) -
+        (Number.isFinite(right.day.displayOrder) ? right.day.displayOrder : right.index)
+    ))
+    .forEach(({ day }, index) => {
+      day.displayOrder = index;
+    });
+
+  weekdayOrderInitialized = true;
 }
 
 function prepareNoteOrder(entries) {
@@ -135,7 +157,10 @@ function prepareNoteOrder(entries) {
   if (!weekdayOrderInitialized) {
     entries
       .map((entry, index) => ({ ...entry, index }))
-      .sort((left, right) => noteWeekdayOrder(left.day) - noteWeekdayOrder(right.day) || left.index - right.index)
+      .sort((left, right) => (
+        noteWeekdayOrder(left.plan, left.day) - noteWeekdayOrder(right.plan, right.day) ||
+        left.index - right.index
+      ))
       .forEach(({ day }, index) => {
         day.displayOrder = index;
       });

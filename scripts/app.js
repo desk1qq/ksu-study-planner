@@ -124,7 +124,9 @@ function createNote({ strictDate = false } = {}) {
     return false;
   }
 
-  savedPlans.push({ name, examDate: hasSchedule ? examDate : "", weekdays, days });
+  const newPlan = { name, examDate: hasSchedule ? examDate : "", weekdays, days };
+  savedPlans.push(newPlan);
+  orderNotesAfterCreation();
   clearComposerAfterSave();
   renderPlan();
   persist();
