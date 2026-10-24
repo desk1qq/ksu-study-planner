@@ -18,6 +18,13 @@ let savedPlans = [];
 let composerHoverPreview = false;
 let weekdayOrderInitialized = false;
 
+function showComposerError(text, focusTarget) {
+  message.className = "error";
+  message.textContent = text;
+  if (typeof showNoteToast === "function") showNoteToast(text);
+  focusTarget?.focus();
+}
+
 function selectedWeekdays() {
   return weekdayInputs
     .filter(input => input.checked)
@@ -96,17 +103,13 @@ function createNote({ strictDate = false } = {}) {
   const weekdays = selectedWeekdays();
 
   if (strictDate && examDate && (!Number.isFinite(endDay) || endDay <= startDay)) {
-    message.className = "error";
-    message.textContent = "Укажите будущую дату экзамена или оставьте поле пустым.";
-    dateInput.focus();
+    showComposerError("Укажите будущую дату экзамена или оставьте поле пустым.", dateInput);
     return false;
   }
 
   const hasSchedule = Number.isFinite(endDay) && endDay > startDay;
   if (!weekdays.length) {
-    message.className = "error";
-    message.textContent = "Выберите день недели для подготовки.";
-    weekdayInputs[0].focus();
+    showComposerError("Выберите день недели для подготовки.", weekdayInputs[0]);
     return false;
   }
 
@@ -119,8 +122,10 @@ function createNote({ strictDate = false } = {}) {
       }];
 
   if (hasSchedule && !days.length) {
-    message.className = "error";
-    message.textContent = "До экзамена нет выбранных дней подготовки. Измените дату или дни недели.";
+    showComposerError(
+      "Нельзя составить план: до экзамена нет выбранного дня подготовки. Выберите другой день недели или более позднюю дату экзамена.",
+      dateInput
+    );
     return false;
   }
 
@@ -221,9 +226,7 @@ form.addEventListener("submit", event => {
   event.preventDefault();
 
   if (!parseTaskInput(tasksInput.value).tasks.length) {
-    message.className = "error";
-    message.textContent = "Введите текст заметки.";
-    tasksInput.focus();
+    showComposerError("Введите текст заметки.", tasksInput);
     return;
   }
 
