@@ -630,7 +630,7 @@ function openNoteEditor(plan, day) {
     editorForm.append(label);
     return input;
   }
-  const name = field("Предмет (необязательно)", "text", noteName(plan, day));
+  const name = field("Предмет", "text", noteName(plan, day));
   const examDate = field("Дата экзамена (необязательно)", "date", noteExamDate(plan, day));
   let preparationDate = day.date || "";
   const storedPreparationDay = calendarDay(preparationDate);
