@@ -265,6 +265,21 @@
   cursor: pointer;
   padding-top: 24px;
 }
+.day[draggable="true"] {
+  cursor: grab;
+}
+.day[draggable="true"]:active {
+  cursor: grabbing;
+}
+.day.is-dragging {
+  z-index: 2;
+  opacity: .48;
+  box-shadow: 0 10px 28px #0004;
+  transform: scale(.97);
+}
+.day:not(.is-dragging) {
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, opacity .18s ease, transform .22s cubic-bezier(.2, .8, .2, 1);
+}
 .day > h3 {
   padding-right: 30px;
 }

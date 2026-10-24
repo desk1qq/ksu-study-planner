@@ -16,6 +16,7 @@ const composerToggle = document.getElementById("composer-toggle");
 
 let savedPlans = [];
 let composerHoverPreview = false;
+let weekdayOrderInitialized = false;
 
 function selectedWeekdays() {
   return weekdayInputs
@@ -49,6 +50,7 @@ function persist() {
       date: dateInput.value,
       tasks: tasksInput.value,
       weekdays: selectedWeekdays(),
+      weekdayOrderInitialized,
       plans: savedPlans
     }));
     storageMessage.textContent = "";
@@ -157,6 +159,7 @@ function restore() {
     dateInput.value = data.date;
     tasksInput.value = data.tasks;
     restoreWeekdays(data.weekdays);
+    weekdayOrderInitialized = data.weekdayOrderInitialized === true;
 
     const plans = Array.isArray(data.plans)
       ? data.plans

@@ -42,6 +42,8 @@ let toastTimer = null;
 let toastHideTimer = null;
 let toastUndoAction = null;
 let trashPurgeTimer = null;
+let draggedNote = null;
+let noteWasDragged = false;
 
 function hideNoteToast() {
   clearTimeout(toastTimer);
@@ -118,6 +120,82 @@ function noteEntries() {
     if (!day.id) day.id = crypto.randomUUID();
     return { plan, day };
   }));
+}
+
+function noteWeekdayOrder(day) {
+  const value = calendarDay(day.date);
+  if (!Number.isFinite(value)) return 7;
+  const weekday = new Date(value * DAY_MS).getUTCDay();
+  return (weekday + 6) % 7;
+}
+
+function prepareNoteOrder(entries) {
+  if (!entries.length) return;
+
+  if (!weekdayOrderInitialized) {
+    entries
+      .map((entry, index) => ({ ...entry, index }))
+      .sort((left, right) => noteWeekdayOrder(left.day) - noteWeekdayOrder(right.day) || left.index - right.index)
+      .forEach(({ day }, index) => {
+        day.displayOrder = index;
+      });
+    weekdayOrderInitialized = true;
+    persist();
+    return;
+  }
+
+  let nextOrder = entries.reduce((maximum, { day }) => (
+    Number.isFinite(day.displayOrder) ? Math.max(maximum, day.displayOrder + 1) : maximum
+  ), 0);
+  let changed = false;
+  for (const { day } of entries) {
+    if (Number.isFinite(day.displayOrder)) continue;
+    day.displayOrder = nextOrder++;
+    changed = true;
+  }
+  if (changed) persist();
+}
+
+function sortNotesByDisplayOrder(entries) {
+  return entries.sort((left, right) => left.day.displayOrder - right.day.displayOrder);
+}
+
+function animateNoteMovement(cards, previousPositions) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for (const card of cards) {
+    const previous = previousPositions.get(card);
+    if (!previous) continue;
+    const current = card.getBoundingClientRect();
+    const deltaX = previous.left - current.left;
+    const deltaY = previous.top - current.top;
+    if (!deltaX && !deltaY) continue;
+    card.animate(
+      [{ transform: `translate(${deltaX}px, ${deltaY}px)` }, { transform: "translate(0, 0)" }],
+      { duration: 220, easing: "cubic-bezier(.2, .8, .2, 1)" }
+    );
+  }
+}
+
+function reorderDraggedNote(targetCard, event) {
+  if (!draggedNote || draggedNote === targetCard || draggedNote.dataset.group !== targetCard.dataset.group) return;
+  const cards = [...planContainer.querySelectorAll(`.day[data-group="${targetCard.dataset.group}"]`)];
+  const previousPositions = new Map(cards.map(card => [card, card.getBoundingClientRect()]));
+  const bounds = targetCard.getBoundingClientRect();
+  const sameRow = event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+  const insertBefore = sameRow
+    ? event.clientX < bounds.left + bounds.width / 2
+    : event.clientY < bounds.top + bounds.height / 2;
+  targetCard.parentElement.insertBefore(draggedNote, insertBefore ? targetCard : targetCard.nextSibling);
+  animateNoteMovement(cards, previousPositions);
+}
+
+function saveVisibleNoteOrder() {
+  const entriesById = new Map(noteEntries().map(entry => [entry.day.id, entry]));
+  [...planContainer.querySelectorAll(".day")].forEach((card, index) => {
+    const entry = entriesById.get(card.dataset.noteId);
+    if (entry) entry.day.displayOrder = index;
+  });
+  persist();
 }
 
 function purgeExpiredTrash(now = Date.now()) {
@@ -256,7 +334,11 @@ function renderNoteCollection() {
     if (active) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
   }
-  const entries = noteEntries().filter(({ day }) => noteState(day) === currentNotesView);
+  const allEntries = noteEntries();
+  prepareNoteOrder(allEntries);
+  const entries = sortNotesByDisplayOrder(
+    allEntries.filter(({ day }) => noteState(day) === currentNotesView)
+  );
   summary.textContent = currentNotesView === "trash"
     ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда.`
     : `Заметок: ${entries.length}. Нажмите на карточку, чтобы открыть её.`;
@@ -333,7 +415,9 @@ function createNoteCard(plan, day, group) {
   card.dataset.group = group;
   card.dataset.noteId = day.id;
   card.tabIndex = 0;
+  card.draggable = currentNotesView === "active";
   card.setAttribute("aria-label", `${name || "Заметка"}. Открыть.`);
+  if (card.draggable) card.title = "Перетащите, чтобы изменить порядок";
 
   if (hasDate && !day.quickNote) {
     card.append(noteElement("h3", "", formatDate(day.date)));
@@ -377,13 +461,45 @@ function createNoteCard(plan, day, group) {
     actions.append(iconAction("В корзину", "trash", () => changeNoteState(plan, day, "trash")));
   }
   card.addEventListener("click", event => {
-    if (!event.target.closest("button")) openNoteEditor(plan, day);
+    if (!noteWasDragged && !event.target.closest("button")) openNoteEditor(plan, day);
   });
   card.addEventListener("keydown", event => {
     if (event.target === card && (event.key === "Enter" || event.key === " ")) {
       event.preventDefault();
       openNoteEditor(plan, day);
     }
+  });
+  card.addEventListener("dragstart", event => {
+    if (!card.draggable) {
+      event.preventDefault();
+      return;
+    }
+    draggedNote = card;
+    noteWasDragged = true;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", day.id);
+    requestAnimationFrame(() => card.classList.add("is-dragging"));
+  });
+  card.addEventListener("dragover", event => {
+    if (!draggedNote || draggedNote.dataset.group !== card.dataset.group) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    reorderDraggedNote(card, event);
+  });
+  card.addEventListener("drop", event => {
+    if (!draggedNote) return;
+    event.preventDefault();
+    saveVisibleNoteOrder();
+    noteActionStatus.textContent = "Порядок заметок сохранён.";
+  });
+  card.addEventListener("dragend", () => {
+    const changed = draggedNote === card;
+    card.classList.remove("is-dragging");
+    draggedNote = null;
+    if (changed) saveVisibleNoteOrder();
+    setTimeout(() => {
+      noteWasDragged = false;
+    }, 0);
   });
   return card;
 }
