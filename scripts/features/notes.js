@@ -56,12 +56,14 @@ function hideNoteToast() {
   }, 180);
 }
 
-function showNoteToast(message, undoAction) {
+function showNoteToast(message, undoAction, actionLabel = "Отменить", hideClose = false) {
   clearTimeout(toastTimer);
   clearTimeout(toastHideTimer);
   noteToastMessage.textContent = message;
   toastUndoAction = undoAction;
   noteToastUndo.hidden = typeof undoAction !== "function";
+  noteToastUndo.textContent = actionLabel;
+  noteToastClose.hidden = hideClose;
   noteToast.hidden = false;
   requestAnimationFrame(() => noteToast.classList.add("is-visible"));
   toastTimer = setTimeout(hideNoteToast, TOAST_DURATION_MS);
@@ -381,7 +383,7 @@ function renderNoteCollection() {
   );
   summary.textContent = currentNotesView === "trash"
     ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда.`
-    : `Заметок: ${entries.length}. Нажмите на карточку, чтобы открыть её.`;
+    : `Заметок: ${entries.length}. Наведите на создание учебной заметки, чтобы открыть её.`;
   if (!entries.length) {
     const emptyText = currentNotesView === "archive"
       ? "В архиве пока пусто."
@@ -452,11 +454,12 @@ function createNoteCard(plan, day, group) {
   const hasExamDate = Number.isFinite(calendarDay(examDate));
 
   function openCard() {
-    openNoteEditor(plan, day);
+    openNoteEditor(plan, day, card);
   }
 
   card.dataset.group = group;
   card.dataset.noteId = day.id;
+  if (suppressCardEntryAnimation) card.classList.add("skip-entry-animation");
   card.tabIndex = 0;
   card.draggable = currentNotesView === "active";
   card.setAttribute("aria-label", `${name || "Заметка"}. Открыть.`);
@@ -609,19 +612,57 @@ function changeNoteState(plan, day, action) {
   return true;
 }
 
-function closeNoteEditor() {
+function closeNoteEditor(animated = false, onClosed) {
   if (!noteEditor) return;
   closeNotePanel();
-  noteEditor.close();
-  noteEditor.remove();
+  const editor = noteEditor;
   noteEditor = null;
+  let finished = false;
+  const target = editor.returnTarget;
+
+  function removeEditor() {
+    if (finished) return;
+    finished = true;
+    if (editor.isConnected) {
+      editor.close();
+      editor.remove();
+    }
+    if (typeof onClosed === "function") onClosed();
+  }
+
+  if (target?.isConnected) target.classList.remove("is-editor-origin");
+
+  if (!animated || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    removeEditor();
+    return;
+  }
+
+  if (target?.isConnected) {
+    const editorRect = editor.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    if (editorRect.width && editorRect.height && targetRect.width && targetRect.height) {
+      const offsetX = targetRect.left + targetRect.width / 2 - (editorRect.left + editorRect.width / 2);
+      const offsetY = targetRect.top + targetRect.height / 2 - (editorRect.top + editorRect.height / 2);
+      editor.style.setProperty("--note-close-x", `${offsetX}px`);
+      editor.style.setProperty("--note-close-y", `${offsetY}px`);
+      editor.style.setProperty("--note-close-scale-x", String(targetRect.width / editorRect.width));
+      editor.style.setProperty("--note-close-scale-y", String(targetRect.height / editorRect.height));
+    }
+  }
+  editor.classList.add("is-closing");
+  editor.addEventListener("animationend", event => {
+    if (event.target === editor && event.animationName === "note-close") removeEditor();
+  });
+  setTimeout(removeEditor, 260);
 }
 
-function openNoteEditor(plan, day) {
+function openNoteEditor(plan, day, originCard) {
   closeNotePanel();
   closeNoteEditor();
   const draft = JSON.parse(JSON.stringify(day));
   const dialog = noteElement("dialog", "note-editor");
+  dialog.returnTarget = originCard;
+  if (originCard?.isConnected) originCard.classList.add("is-editor-origin");
   noteEditor = dialog;
   dialog.setAttribute("aria-labelledby", "note-editor-title");
   const editorForm = noteElement("form", "note-editor-form");
@@ -636,9 +677,14 @@ function openNoteEditor(plan, day) {
   editorNotice.setAttribute("aria-live", "polite");
   editorForm.append(editorNotice);
   let editorNoticeTimer;
-  function showEditorNotice(text) {
+  function showEditorNotice(text, action, actionLabel = "") {
     clearTimeout(editorNoticeTimer);
-    editorNotice.textContent = text;
+    editorNotice.replaceChildren(noteElement("span", "", text));
+    if (typeof action === "function") {
+      const actionButton = noteButton(actionLabel, actionLabel, action);
+      actionButton.classList.add("editor-notice-action");
+      editorNotice.append(actionButton);
+    }
     editorNotice.classList.remove("is-visible");
     void editorNotice.offsetWidth;
     editorNotice.classList.add("is-visible");
@@ -816,8 +862,7 @@ function openNoteEditor(plan, day) {
   }
   function closeEditor() {
     if (noteState(day) !== "trash" && !commit()) return;
-    closeNoteEditor();
-    renderPlan();
+    closeNoteEditor(true, () => renderPlan({ animateCards: false }));
   }
   actions.append(noteButton("Закрыть", "Закрыть", closeEditor));
   editorForm.append(actions);

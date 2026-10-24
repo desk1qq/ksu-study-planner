@@ -17,6 +17,7 @@ const composerToggle = document.getElementById("composer-toggle");
 let savedPlans = [];
 let composerHoverPreview = false;
 let weekdayOrderInitialized = false;
+let suppressCardEntryAnimation = false;
 
 function showComposerError(text, focusTarget) {
   message.className = "error";
@@ -66,10 +67,12 @@ function persist() {
   }
 }
 
-function renderPlan() {
+function renderPlan({ animateCards = true } = {}) {
   closeNotePanel();
+  suppressCardEntryAnimation = !animateCards;
   planContainer.replaceChildren();
   renderNoteCollection();
+  suppressCardEntryAnimation = false;
   checkReminders();
   document.documentElement.classList.add("notes-ready");
 }
@@ -136,7 +139,7 @@ function createNote({ strictDate = false } = {}) {
   renderPlan();
   persist();
   if (!examDate && typeof showNoteToast === "function") {
-    showNoteToast("Заметка создана без даты экзамена. Календарное распределение не выполнено.");
+    showNoteToast("Заметка создана без даты экзамена, календарное распределение не выполнено. Вы можете указать дату, открыв заметку.");
   }
   return true;
 }
