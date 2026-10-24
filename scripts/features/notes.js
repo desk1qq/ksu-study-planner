@@ -450,11 +450,7 @@ function createNoteCard(plan, day, group) {
 
   const weekday = noteWeekday(plan, day);
   if (name || weekday) {
-    const cardTitle = noteElement("p", "card-exam");
-    if (name) cardTitle.append(document.createTextNode(name));
-    if (name && weekday) cardTitle.append(document.createTextNode(" ▪ "));
-    if (weekday) cardTitle.append(noteElement("span", "card-weekday", weekday));
-    card.append(cardTitle);
+    card.append(noteElement("p", "card-exam", [name, weekday].filter(Boolean).join(" ▪ ")));
   }
   if (hasExamDate) {
     const countdown = noteElement("p", "card-exam-date", examCountdown(examDate, day.date));
@@ -633,6 +629,12 @@ function openNoteEditor(plan, day) {
   const name = field("Предмет (необязательно)", "text", noteName(plan, day));
   const examDate = field("Дата экзамена (необязательно)", "date", noteExamDate(plan, day));
   let preparationDate = day.date || "";
+  const storedPreparationDay = calendarDay(preparationDate);
+  let selectedPreparationWeekday = Number.isFinite(storedPreparationDay)
+    ? new Date(storedPreparationDay * DAY_MS).getUTCDay()
+    : Array.isArray(plan.weekdays) && plan.weekdays.length
+      ? plan.weekdays[0]
+      : -1;
   const weekdayField = noteElement("div", "editor-weekday-field");
   weekdayField.append(noteElement("span", "editor-weekday-label", "День подготовки (необязательно)"));
   const weekdayOptions = noteElement("div", "editor-weekday-options");
@@ -642,6 +644,7 @@ function openNoteEditor(plan, day) {
     [1, "Пн"], [2, "Вт"], [3, "Ср"], [4, "Чт"], [5, "Пт"], [6, "Сб"], [0, "Вс"]
   ].map(([value, label]) => {
     const button = noteButton(label, label, () => {
+      selectedPreparationWeekday = value;
       preparationDate = dateForWeekday(preparationDate, value);
       updateWeekdaySelection();
       updateEditorHeading();
@@ -657,12 +660,8 @@ function openNoteEditor(plan, day) {
   editorForm.append(weekdayField);
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
   function updateWeekdaySelection() {
-    const selectedDay = calendarDay(preparationDate);
-    const selectedWeekday = Number.isFinite(selectedDay)
-      ? new Date(selectedDay * DAY_MS).getUTCDay()
-      : -1;
     for (const button of weekdayButtons) {
-      const selected = Number(button.dataset.weekday) === selectedWeekday;
+      const selected = Number(button.dataset.weekday) === selectedPreparationWeekday;
       button.classList.toggle("selected", selected);
       button.setAttribute("aria-pressed", String(selected));
     }
@@ -714,6 +713,7 @@ function openNoteEditor(plan, day) {
       day.quickNote = true;
     }
     plan.examDate = examDate.value;
+    plan.weekdays = selectedPreparationWeekday >= 0 ? [selectedPreparationWeekday] : [];
     for (const planDay of plan.days) delete planDay.examDate;
     if (!draft.reminder) delete day.reminder;
     if (action) {
