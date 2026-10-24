@@ -191,10 +191,12 @@ function dayWord(value) {
   return "дней";
 }
 
-function examCountdown(value) {
+function examCountdown(value, preparationDate) {
   const examDay = calendarDay(value);
   if (!Number.isFinite(examDay)) return "";
-  const remaining = examDay - todayDay();
+  const preparationDay = calendarDay(preparationDate);
+  const startDay = Number.isFinite(preparationDay) ? preparationDay : todayDay();
+  const remaining = examDay - startDay;
   if (remaining > 0) return `До экзамена осталось: ${remaining} ${dayWord(remaining)}`;
   if (remaining === 0) return "Экзамен сегодня";
   return `Экзамен прошёл ${Math.abs(remaining)} ${dayWord(remaining)} назад`;
@@ -328,7 +330,7 @@ function createNoteCard(plan, day, group) {
     card.append(noteElement("p", "card-exam", titleParts.join(" ▪ ")));
   }
   if (hasExamDate) {
-    const countdown = noteElement("p", "card-exam-date", examCountdown(examDate));
+    const countdown = noteElement("p", "card-exam-date", examCountdown(examDate, day.date));
     countdown.title = `Дата экзамена: ${formatDate(examDate)}`;
     card.append(countdown);
   }
@@ -451,7 +453,8 @@ function openNoteEditor(plan, day) {
   dialog.setAttribute("aria-labelledby", "note-editor-title");
   const editorForm = noteElement("form", "note-editor-form");
   editorForm.noValidate = true;
-  const heading = noteElement("h2", "", noteState(day) === "trash" ? "Заметка в корзине" : "Заметка");
+  const headingPrefix = noteState(day) === "trash" ? "Заметка в корзине" : "Заметка";
+  const heading = noteElement("h2");
   heading.id = "note-editor-title";
   editorForm.append(heading);
   function field(title, type, value) {
@@ -471,6 +474,11 @@ function openNoteEditor(plan, day) {
   const name = field("Предмет (необязательно)", "text", noteName(plan, day));
   const examDate = field("Дата экзамена (необязательно)", "date", noteExamDate(plan, day));
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
+  function updateEditorHeading() {
+    const countdown = examCountdown(examDate.value, day.date);
+    heading.textContent = countdown ? `${headingPrefix} ▪ ${countdown}` : headingPrefix;
+  }
+  updateEditorHeading();
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   editorForm.append(error);
   if (noteState(day) !== "trash") {
@@ -514,7 +522,10 @@ function openNoteEditor(plan, day) {
   }
   if (noteState(day) !== "trash") {
     name.addEventListener("input", scheduleSave);
-    examDate.addEventListener("input", scheduleSave);
+    examDate.addEventListener("input", () => {
+      updateEditorHeading();
+      scheduleSave();
+    });
     tasks.addEventListener("input", scheduleSave);
     tasks.addEventListener("keydown", continueTaskList);
   }
