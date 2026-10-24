@@ -257,6 +257,8 @@ html:not(.notes-ready) .workspace {
   text-align: left;
   font-size: 17px;
   font-weight: 600;
+  margin-bottom: 18px;
+  transition: margin-bottom .42s cubic-bezier(.22, 1, .36, 1), color .2s ease;
 }
 .composer.is-collapsed {
   max-width: 600px;
@@ -268,7 +270,7 @@ html:not(.notes-ready) .workspace {
   opacity: 1;
   transform: translateY(0);
   visibility: visible;
-  transition: max-height .38s cubic-bezier(.22, 1, .36, 1), opacity .24s ease .06s, transform .34s cubic-bezier(.22, 1, .36, 1), visibility 0s;
+  transition: max-height .46s cubic-bezier(.22, 1, .36, 1), opacity .36s ease .04s, transform .42s cubic-bezier(.22, 1, .36, 1), visibility 0s;
 }
 .composer.is-collapsed #planner-form {
   max-height: 0;
@@ -276,10 +278,10 @@ html:not(.notes-ready) .workspace {
   transform: translateY(-8px);
   visibility: hidden;
   pointer-events: none;
-  transition: max-height .32s cubic-bezier(.4, 0, .2, 1), opacity .18s ease, transform .26s ease, visibility 0s linear .32s;
+  transition: max-height .42s cubic-bezier(.22, 1, .36, 1), opacity .32s ease, transform .38s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .42s;
 }
-.composer:not(.is-collapsed) #composer-toggle {
-  margin-bottom: 18px;
+.composer.is-collapsed #composer-toggle {
+  margin-bottom: 0;
 }
 h1 {
   font-size: 17px;

@@ -15,12 +15,8 @@ const composerToggle = document.getElementById("composer-toggle");
 
 let savedPlans = [];
 let composerHoverPreview = false;
-let composerOpenTimer = null;
-let composerCloseTimer = null;
 
 function setComposerExpanded(expanded, { focus = expanded } = {}) {
-  clearTimeout(composerOpenTimer);
-  clearTimeout(composerCloseTimer);
   if (expanded) {
     composer.style.setProperty("--composer-form-height", `${form.scrollHeight}px`);
   }
@@ -157,32 +153,21 @@ function restore() {
 
 composer.addEventListener("pointerenter", event => {
   if (event.pointerType && event.pointerType !== "mouse") return;
-  clearTimeout(composerCloseTimer);
   if (!composer.classList.contains("is-collapsed")) return;
 
   composerHoverPreview = true;
-  composerOpenTimer = setTimeout(() => {
-    if (!composerHoverPreview || !composer.matches(":hover")) return;
-    setComposerExpanded(true, { focus: false });
-  }, 180);
+  setComposerExpanded(true, { focus: false });
 });
 
 composer.addEventListener("pointerleave", event => {
   if (event.pointerType && event.pointerType !== "mouse") return;
   if (!composerHoverPreview) return;
-  clearTimeout(composerOpenTimer);
-
-  composerCloseTimer = setTimeout(() => {
-    if (!composerHoverPreview || composer.matches(":hover")) return;
-    composerHoverPreview = false;
-    setComposerExpanded(false, { focus: false });
-  }, 280);
+  composerHoverPreview = false;
+  setComposerExpanded(false, { focus: false });
 });
 
 composer.addEventListener("pointerdown", () => {
   composerHoverPreview = false;
-  clearTimeout(composerOpenTimer);
-  clearTimeout(composerCloseTimer);
 });
 
 composerToggle.addEventListener("click", () => {
