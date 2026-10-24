@@ -302,6 +302,78 @@
 #note-action-status:empty {
   display: none;
 }
+
+.note-toast {
+  position: fixed;
+  z-index: 1000;
+  left: 24px;
+  bottom: 24px;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  align-items: center;
+  gap: 20px;
+  width: min(452px, calc(100vw - 48px));
+  min-height: 64px;
+  padding: 10px 14px 10px 24px;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 35%);
+  border-radius: 4px;
+  color: #f1f3f4;
+  background: #303134;
+  box-shadow: 0 4px 12px #0005;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.note-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.note-toast-undo,
+.note-toast-close {
+  border: 0;
+  color: #8ab4f8;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-toast-close {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: #e8eaed;
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.note-toast-undo:hover,
+.note-toast-undo:focus-visible,
+.note-toast-close:hover,
+.note-toast-close:focus-visible {
+  background: #ffffff12;
+  outline: none;
+}
+
+@media (max-width: 560px) {
+  .note-toast {
+    left: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 8px;
+    padding-left: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-toast {
+    transition: none;
+  }
+}
 .note-editor {
   padding: 0;
   width: min(600px, calc(100vw - 32px));

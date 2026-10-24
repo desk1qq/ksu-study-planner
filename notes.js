@@ -6,8 +6,45 @@ const deleteConfirm = document.getElementById("delete-confirm");
 const deleteConfirmTitle = document.getElementById("delete-confirm-title");
 const trashControls = document.getElementById("trash-controls");
 const emptyTrashButton = document.getElementById("empty-trash");
+const noteToast = document.getElementById("note-toast");
+const noteToastMessage = document.getElementById("note-toast-message");
+const noteToastUndo = document.getElementById("note-toast-undo");
+const noteToastClose = document.getElementById("note-toast-close");
 const TRASH_RETENTION_MS = 7 * DAY_MS;
+const TOAST_DURATION_MS = 4000;
 let pendingConfirmation = null;
+let toastTimer = null;
+let toastHideTimer = null;
+let toastUndoAction = null;
+
+function hideNoteToast() {
+  clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
+  noteToast.classList.remove("is-visible");
+  toastHideTimer = setTimeout(() => {
+    noteToast.hidden = true;
+    toastUndoAction = null;
+  }, 180);
+}
+
+function showNoteToast(message, undoAction) {
+  clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
+  noteToastMessage.textContent = message;
+  toastUndoAction = undoAction;
+  noteToastUndo.hidden = typeof undoAction !== "function";
+  noteToast.hidden = false;
+  requestAnimationFrame(() => noteToast.classList.add("is-visible"));
+  toastTimer = setTimeout(hideNoteToast, TOAST_DURATION_MS);
+}
+
+noteToastUndo.addEventListener("click", () => {
+  const undo = toastUndoAction;
+  hideNoteToast();
+  if (undo) undo();
+});
+
+noteToastClose.addEventListener("click", hideNoteToast);
 
 deleteConfirm.querySelector("form").addEventListener("submit", event => {
   event.preventDefault();
@@ -234,25 +271,36 @@ function createNoteCard(plan, day, group) {
 
 function changeNoteState(plan, day, action) {
   let status = "";
+  const previous = {
+    state: day.state,
+    pinned: day.pinned,
+    previousState: day.previousState,
+    trashedAt: day.trashedAt
+  };
+  let canUndo = false;
   if (action === "pin") {
     day.pinned = !day.pinned;
     if (day.pinned) day.state = "active";
     status = day.pinned ? "Заметка закреплена." : "Заметка откреплена.";
   } else if (action === "archive") {
     day.state = "archive"; day.pinned = false; status = "Заметка перемещена в архив.";
+    canUndo = true;
   } else if (action === "unarchive") {
     day.state = "active"; status = "Заметка возвращена из архива.";
+    canUndo = true;
   } else if (action === "trash") {
     day.previousState = "active";
     day.state = "trash";
     day.pinned = false;
     day.trashedAt = new Date().toISOString();
     status = "Заметка перемещена в корзину.";
+    canUndo = true;
   } else if (action === "restore") {
     day.state = "active";
     delete day.previousState;
     delete day.trashedAt;
     status = "Заметка восстановлена в плане подготовки.";
+    canUndo = true;
   } else if (action === "delete") {
     if (noteState(day) !== "trash") return false;
     requestPermanentDeletion(plan, day);
@@ -260,7 +308,20 @@ function changeNoteState(plan, day, action) {
   }
   closeNoteEditor();
   persist(); renderPlan();
-  document.getElementById("note-action-status").textContent = status;
+  if (canUndo) {
+    showNoteToast(status, () => {
+      day.state = previous.state;
+      day.pinned = previous.pinned;
+      if (previous.previousState === undefined) delete day.previousState;
+      else day.previousState = previous.previousState;
+      if (previous.trashedAt === undefined) delete day.trashedAt;
+      else day.trashedAt = previous.trashedAt;
+      persist();
+      renderPlan();
+    });
+  } else {
+    document.getElementById("note-action-status").textContent = status;
+  }
   const next = [...planContainer.querySelectorAll(".day")].find(card => card.dataset.noteId === day.id);
   (next || document.querySelector(`[data-view="${currentNotesView}"]`)).focus({ preventScroll: true });
   return true;
