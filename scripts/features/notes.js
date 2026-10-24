@@ -181,6 +181,25 @@ function noteExamDate(plan, day) {
   return day.examDate || plan.examDate;
 }
 
+function dayWord(value) {
+  const absolute = Math.abs(value);
+  const lastTwo = absolute % 100;
+  const last = absolute % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return "дней";
+  if (last === 1) return "день";
+  if (last >= 2 && last <= 4) return "дня";
+  return "дней";
+}
+
+function examCountdown(value) {
+  const examDay = calendarDay(value);
+  if (!Number.isFinite(examDay)) return "";
+  const remaining = examDay - todayDay();
+  if (remaining > 0) return `До экзамена осталось: ${remaining} ${dayWord(remaining)}`;
+  if (remaining === 0) return "Экзамен сегодня";
+  return `Экзамен прошёл ${Math.abs(remaining)} ${dayWord(remaining)} назад`;
+}
+
 function weekdayName(dayNumber) {
   return ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"][dayNumber] || "";
 }
@@ -309,7 +328,9 @@ function createNoteCard(plan, day, group) {
     card.append(noteElement("p", "card-exam", titleParts.join(" ▪ ")));
   }
   if (hasExamDate) {
-    card.append(noteElement("p", "card-exam-date", `Экзамен: ${formatDate(examDate)}`));
+    const countdown = noteElement("p", "card-exam-date", examCountdown(examDate));
+    countdown.title = `Дата экзамена: ${formatDate(examDate)}`;
+    card.append(countdown);
   }
 
   card.append(taskContainer(day));
@@ -448,6 +469,7 @@ function openNoteEditor(plan, day) {
     return input;
   }
   const name = field("Предмет (необязательно)", "text", noteName(plan, day));
+  const examDate = field("Дата экзамена (необязательно)", "date", noteExamDate(plan, day));
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   editorForm.append(error);
@@ -466,7 +488,15 @@ function openNoteEditor(plan, day) {
       error.textContent = "Введите текст заметки.";
       return false;
     }
+    const selectedExamDay = calendarDay(examDate.value);
+    if (examDate.value && !Number.isFinite(selectedExamDay)) {
+      error.textContent = "Укажите корректную дату экзамена или оставьте поле пустым.";
+      examDate.focus();
+      return false;
+    }
     Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
+    plan.examDate = examDate.value;
+    for (const planDay of plan.days) delete planDay.examDate;
     if (!draft.reminder) delete day.reminder;
     if (action) {
       changeNoteState(plan, day, action);
@@ -484,6 +514,7 @@ function openNoteEditor(plan, day) {
   }
   if (noteState(day) !== "trash") {
     name.addEventListener("input", scheduleSave);
+    examDate.addEventListener("input", scheduleSave);
     tasks.addEventListener("input", scheduleSave);
     tasks.addEventListener("keydown", continueTaskList);
   }
