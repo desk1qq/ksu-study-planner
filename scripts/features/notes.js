@@ -406,8 +406,7 @@ function actionIcon(kind) {
     pin: '<path d="M8 3h8l-1 6 3 4v2H6v-2l3-4-1-6ZM12 15v7"/>',
     archive: '<path d="M4 8h16v13H4zM3 3h18v5H3zM9 12h6"/>',
     trash: '<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>',
-    restore: '<path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/>',
-    edit: '<path d="m4 16 12-12 4 4L8 20H4v-4ZM14 6l4 4"/>'
+    restore: '<path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/>'
   };
   const holder = noteElement("span");
   holder.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + paths[kind] + '</svg>';
@@ -481,7 +480,6 @@ function createNoteCard(plan, day, group) {
     actions.append(iconAction("Восстановить", "restore", () => changeNoteState(plan, day, "restore")));
     actions.append(iconAction("Удалить навсегда", "trash", () => changeNoteState(plan, day, "delete")));
   } else {
-    actions.append(iconAction("Открыть и редактировать", "edit", () => openNoteEditor(plan, day)));
     const archiveLabel = noteState(day) === "archive" ? "Вернуть из архива" : "В архив";
     const archiveAction = noteState(day) === "archive" ? "unarchive" : "archive";
     actions.append(iconAction(
