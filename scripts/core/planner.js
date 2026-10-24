@@ -78,18 +78,26 @@ function continueTaskList(event) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function distributeTasks(tasks, startDay, endDay, listType) {
-  const availableDays = endDay - startDay;
-  const baseCount = Math.floor(tasks.length / availableDays);
-  const extraCount = tasks.length % availableDays;
+function studyDaysBetween(startDay, endDay, weekdays = [0, 1, 2, 3, 4, 5, 6]) {
+  const allowedWeekdays = new Set(weekdays);
+  return Array.from({ length: Math.max(0, endDay - startDay) }, (_, index) => startDay + index)
+    .filter(day => allowedWeekdays.has(new Date(day * DAY_MS).getUTCDay()));
+}
+
+function distributeTasks(tasks, startDay, endDay, listType, weekdays) {
+  const studyDays = studyDaysBetween(startDay, endDay, weekdays);
+  if (!studyDays.length) return [];
+
+  const baseCount = Math.floor(tasks.length / studyDays.length);
+  const extraCount = tasks.length % studyDays.length;
   let taskOffset = 0;
 
   return Array.from(
-    { length: Math.min(availableDays, tasks.length) },
+    { length: Math.min(studyDays.length, tasks.length) },
     (_, index) => {
       const count = baseCount + (index < extraCount ? 1 : 0);
       const day = {
-        date: dateString(startDay + index),
+        date: dateString(studyDays[index]),
         tasks: tasks.slice(taskOffset, taskOffset + count),
         listType
       };

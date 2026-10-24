@@ -6,6 +6,7 @@ const form = document.getElementById("planner-form");
 const nameInput = document.getElementById("exam-name");
 const dateInput = document.getElementById("exam-date");
 const tasksInput = document.getElementById("tasks");
+const weekdayInputs = [...document.querySelectorAll('input[name="study-weekday"]')];
 const message = document.getElementById("message");
 const storageMessage = document.getElementById("storage-message");
 const planContainer = document.getElementById("plan");
@@ -15,6 +16,19 @@ const composerToggle = document.getElementById("composer-toggle");
 
 let savedPlans = [];
 let composerHoverPreview = false;
+
+function selectedWeekdays() {
+  return weekdayInputs
+    .filter(input => input.checked)
+    .map(input => Number(input.value));
+}
+
+function restoreWeekdays(weekdays) {
+  const selected = Array.isArray(weekdays) ? new Set(weekdays) : new Set([0, 1, 2, 3, 4, 5, 6]);
+  weekdayInputs.forEach(input => {
+    input.checked = selected.has(Number(input.value));
+  });
+}
 
 function setComposerExpanded(expanded, { focus = expanded } = {}) {
   if (expanded) {
@@ -34,6 +48,7 @@ function persist() {
       name: nameInput.value,
       date: dateInput.value,
       tasks: tasksInput.value,
+      weekdays: selectedWeekdays(),
       plans: savedPlans
     }));
     storageMessage.textContent = "";
@@ -76,6 +91,7 @@ function createNote({ strictDate = false } = {}) {
   const examDate = dateInput.value;
   const startDay = todayDay();
   const endDay = calendarDay(examDate);
+  const weekdays = selectedWeekdays();
 
   if (strictDate && examDate && (!Number.isFinite(endDay) || endDay <= startDay)) {
     message.className = "error";
@@ -85,15 +101,28 @@ function createNote({ strictDate = false } = {}) {
   }
 
   const hasSchedule = Number.isFinite(endDay) && endDay > startDay;
+  if (hasSchedule && !weekdays.length) {
+    message.className = "error";
+    message.textContent = "Выберите хотя бы один день недели для подготовки.";
+    weekdayInputs[0].focus();
+    return false;
+  }
+
   const days = hasSchedule
-    ? distributeTasks(parsed.tasks, startDay, endDay, parsed.listType)
+    ? distributeTasks(parsed.tasks, startDay, endDay, parsed.listType, weekdays)
     : [{
         tasks: parsed.tasks,
         listType: parsed.listType,
         quickNote: true
       }];
 
-  savedPlans.push({ name, examDate: hasSchedule ? examDate : "", days });
+  if (hasSchedule && !days.length) {
+    message.className = "error";
+    message.textContent = "До экзамена нет выбранных дней подготовки. Измените дату или дни недели.";
+    return false;
+  }
+
+  savedPlans.push({ name, examDate: hasSchedule ? examDate : "", weekdays, days });
   clearComposerAfterSave();
   renderPlan();
   persist();
@@ -127,6 +156,7 @@ function restore() {
     nameInput.value = data.name;
     dateInput.value = data.date;
     tasksInput.value = data.tasks;
+    restoreWeekdays(data.weekdays);
 
     const plans = Array.isArray(data.plans)
       ? data.plans

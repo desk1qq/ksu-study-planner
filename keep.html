@@ -105,6 +105,19 @@
               <input id="exam-date" type="date">
             </div>
           </div>
+          <fieldset class="weekday-picker">
+            <legend>Выберите день подготовки к экзамену</legend>
+            <div class="weekday-options" aria-describedby="weekday-hint">
+              <label><input type="checkbox" name="study-weekday" value="1" checked><span>Пн</span></label>
+              <label><input type="checkbox" name="study-weekday" value="2" checked><span>Вт</span></label>
+              <label><input type="checkbox" name="study-weekday" value="3" checked><span>Ср</span></label>
+              <label><input type="checkbox" name="study-weekday" value="4" checked><span>Чт</span></label>
+              <label><input type="checkbox" name="study-weekday" value="5" checked><span>Пт</span></label>
+              <label><input type="checkbox" name="study-weekday" value="6" checked><span>Сб</span></label>
+              <label><input type="checkbox" name="study-weekday" value="0" checked><span>Вс</span></label>
+            </div>
+            <small id="weekday-hint">Задачи попадут только на выбранные дни до экзамена.</small>
+          </fieldset>
           <label for="tasks">Что нужно изучить?</label>
           <textarea id="tasks" rows="3" placeholder="Текст заметки..." required></textarea>
           <div class="composer-bottom"><button class="primary-button" type="submit">Составить план</button></div>
