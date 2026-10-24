@@ -1,6 +1,26 @@
 "use strict";
 
-let currentNotesView = "active";
+const NOTES_VIEW_KEY = "exam-planner-current-view";
+const NOTES_VIEWS = new Set(["active", "archive", "trash"]);
+
+function restoreNotesView() {
+  try {
+    const storedView = localStorage.getItem(NOTES_VIEW_KEY);
+    return NOTES_VIEWS.has(storedView) ? storedView : "active";
+  } catch {
+    return "active";
+  }
+}
+
+function persistNotesView(view) {
+  try {
+    localStorage.setItem(NOTES_VIEW_KEY, view);
+  } catch {
+    // Навигация продолжает работать, даже если хранилище недоступно.
+  }
+}
+
+let currentNotesView = restoreNotesView();
 let noteEditor = null;
 const deleteConfirm = document.getElementById("delete-confirm");
 const deleteConfirmTitle = document.getElementById("delete-confirm-title");
@@ -138,7 +158,9 @@ function noteName(plan, day) { return day.name || plan.name; }
 function noteExamDate(plan, day) { return day.examDate || plan.examDate; }
 
 function switchNotesView(view) {
+  if (!NOTES_VIEWS.has(view)) return;
   currentNotesView = view;
+  persistNotesView(view);
   document.getElementById("search").value = "";
   document.getElementById("note-action-status").textContent = "";
   renderPlan();
