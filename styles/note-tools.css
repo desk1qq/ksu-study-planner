@@ -447,6 +447,30 @@
   letter-spacing: 0;
   color: var(--text);
 }
+.editor-lock-notice {
+  position: absolute;
+  z-index: 4;
+  top: 62px;
+  left: 50%;
+  width: max-content;
+  max-width: calc(100% - 48px);
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #323338;
+  box-shadow: 0 5px 18px #0005;
+  color: #f1f3f4;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -8px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+.editor-lock-notice.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
 .editor-field {
   margin: 0 0 16px;
 }
@@ -517,6 +541,9 @@
 .editor-weekday-option.note-button:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+.editor-weekday-option[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 .editor-field textarea.note-text {
   flex: 1;

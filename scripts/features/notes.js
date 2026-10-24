@@ -443,10 +443,6 @@ function createNoteCard(plan, day, group) {
   const hasExamDate = Number.isFinite(calendarDay(examDate));
 
   function openCard() {
-    if (noteState(day) === "trash") {
-      showNoteToast("Чтобы внести изменения, восстановите учебную заметку из корзины.");
-      return;
-    }
     openNoteEditor(plan, day);
   }
 
@@ -454,12 +450,7 @@ function createNoteCard(plan, day, group) {
   card.dataset.noteId = day.id;
   card.tabIndex = 0;
   card.draggable = currentNotesView === "active";
-  card.setAttribute(
-    "aria-label",
-    noteState(day) === "trash"
-      ? `${name || "Заметка"}. Для изменения восстановите из корзины.`
-      : `${name || "Заметка"}. Открыть.`
-  );
+  card.setAttribute("aria-label", `${name || "Заметка"}. Открыть.`);
   if (card.draggable) card.title = "Перетащите, чтобы изменить порядок";
 
   if (hasDate && !day.quickNote) {
@@ -625,10 +616,24 @@ function openNoteEditor(plan, day) {
   dialog.setAttribute("aria-labelledby", "note-editor-title");
   const editorForm = noteElement("form", "note-editor-form");
   editorForm.noValidate = true;
-  const headingPrefix = noteState(day) === "trash" ? "Заметка в корзине" : "Заметка";
+  const isTrashed = noteState(day) === "trash";
+  const headingPrefix = isTrashed ? "Заметка в корзине" : "Заметка";
   const heading = noteElement("h2");
   heading.id = "note-editor-title";
   editorForm.append(heading);
+  const lockNotice = noteElement("p", "editor-lock-notice");
+  lockNotice.setAttribute("role", "status");
+  lockNotice.setAttribute("aria-live", "polite");
+  editorForm.append(lockNotice);
+  let lockNoticeTimer;
+  function showTrashEditNotice() {
+    clearTimeout(lockNoticeTimer);
+    lockNotice.textContent = "Чтобы внести изменения, восстановите учебную заметку из корзины.";
+    lockNotice.classList.remove("is-visible");
+    void lockNotice.offsetWidth;
+    lockNotice.classList.add("is-visible");
+    lockNoticeTimer = setTimeout(() => lockNotice.classList.remove("is-visible"), 4000);
+  }
   function field(title, type, value) {
     const label = noteElement("label", "editor-field", title);
     const input = noteElement(type === "textarea" ? "textarea" : "input");
@@ -661,6 +666,10 @@ function openNoteEditor(plan, day) {
     [1, "Пн"], [2, "Вт"], [3, "Ср"], [4, "Чт"], [5, "Пт"], [6, "Сб"], [0, "Вс"]
   ].map(([value, label]) => {
     const button = noteButton(label, label, () => {
+      if (isTrashed) {
+        showTrashEditNotice();
+        return;
+      }
       selectedPreparationWeekday = value;
       preparationDate = dateForWeekday(preparationDate, value);
       updateWeekdaySelection();
@@ -669,7 +678,7 @@ function openNoteEditor(plan, day) {
     });
     button.classList.add("editor-weekday-option");
     button.dataset.weekday = String(value);
-    button.disabled = noteState(day) === "trash";
+    if (isTrashed) button.setAttribute("aria-disabled", "true");
     weekdayOptions.append(button);
     return button;
   });
@@ -698,6 +707,18 @@ function openNoteEditor(plan, day) {
     pin.classList.add("editor-pin");
     pin.setAttribute("aria-pressed", String(!!day.pinned));
     editorForm.append(pin);
+  }
+  if (isTrashed) {
+    editorForm.addEventListener("pointerdown", event => {
+      if (event.target.closest(".editor-field input, .editor-field textarea, .editor-weekday-option")) {
+        showTrashEditNotice();
+      }
+    }, true);
+    editorForm.addEventListener("keydown", event => {
+      if (!event.target.matches(".editor-field input, .editor-field textarea")) return;
+      if (["Tab", "Shift", "Escape"].includes(event.key)) return;
+      showTrashEditNotice();
+    });
   }
   function commit(action) {
     clearTimeout(saveTimer);
