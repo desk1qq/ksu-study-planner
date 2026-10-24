@@ -111,5 +111,14 @@
       <p id="theme-status" role="status" aria-live="polite"></p>
     </main>
   </div>
+  <dialog id="delete-confirm" class="delete-confirm" aria-labelledby="delete-confirm-title">
+    <form method="dialog">
+      <p id="delete-confirm-title">Удалить навсегда?</p>
+      <div class="delete-confirm-actions">
+        <button type="submit" value="cancel">Отмена</button>
+        <button class="delete-confirm-primary" type="submit" value="delete">Удалить</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

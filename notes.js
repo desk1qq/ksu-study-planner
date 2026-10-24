@@ -2,6 +2,40 @@
 
 let currentNotesView = "active";
 let noteEditor = null;
+const deleteConfirm = document.getElementById("delete-confirm");
+let pendingDeletion = null;
+
+deleteConfirm.querySelector("form").addEventListener("submit", event => {
+  event.preventDefault();
+  const confirmed = event.submitter?.value === "delete";
+  const deletion = pendingDeletion;
+  pendingDeletion = null;
+  deleteConfirm.close(confirmed ? "delete" : "cancel");
+
+  if (confirmed && deletion) {
+    deleteNotePermanently(deletion.plan, deletion.day);
+  }
+});
+
+deleteConfirm.addEventListener("cancel", () => {
+  pendingDeletion = null;
+});
+
+function requestPermanentDeletion(plan, day) {
+  pendingDeletion = { plan, day };
+  deleteConfirm.returnValue = "cancel";
+  deleteConfirm.showModal();
+}
+
+function deleteNotePermanently(plan, day) {
+  plan.days = plan.days.filter(item => item !== day);
+  savedPlans = savedPlans.filter(item => item.days.length);
+  closeNoteEditor();
+  persist();
+  renderPlan();
+  document.getElementById("note-action-status").textContent = "Заметка удалена навсегда.";
+  document.querySelector('[data-view="trash"]').focus({ preventScroll: true });
+}
 
 function noteState(day) {
   return day.state === "trash" || day.state === "archive" ? day.state : "active";
@@ -164,10 +198,9 @@ function changeNoteState(plan, day, action) {
     delete day.previousState;
     status = "Заметка восстановлена в плане подготовки.";
   } else if (action === "delete") {
-    if (noteState(day) !== "trash" || !window.confirm("Удалить эту заметку навсегда? Восстановить её будет нельзя.")) return false;
-    plan.days = plan.days.filter(item => item !== day);
-    savedPlans = savedPlans.filter(item => item.days.length);
-    status = "Заметка удалена навсегда.";
+    if (noteState(day) !== "trash") return false;
+    requestPermanentDeletion(plan, day);
+    return false;
   }
   closeNoteEditor();
   persist(); renderPlan();

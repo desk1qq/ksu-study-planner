@@ -449,3 +449,52 @@
     padding: 18px;
   }
 }
+
+/* Подтверждение окончательного удаления. */
+.delete-confirm {
+  width: min(430px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 8px 28px #0007;
+}
+
+.delete-confirm::backdrop {
+  background: #0008;
+}
+
+.delete-confirm form {
+  padding: 24px;
+}
+
+.delete-confirm p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+  margin-top: 34px;
+}
+
+.delete-confirm-actions button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.delete-confirm-actions button:hover {
+  background: var(--hover);
+}
+
+.delete-confirm-actions .delete-confirm-primary {
+  color: #8ab4f8;
+}
