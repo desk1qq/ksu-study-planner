@@ -165,58 +165,63 @@ function openNoteEditor(plan, day) {
   dialog.setAttribute("aria-labelledby", "note-editor-title");
   const editorForm = noteElement("form", "note-editor-form");
   editorForm.noValidate = true;
-  const heading = noteElement("h2", "", noteState(day) === "trash" ? "Заметка в корзине" : "Редактировать заметку");
+  const heading = noteElement("h2", "", noteState(day) === "trash" ? "Заметка в корзине" : "Заметка");
   heading.id = "note-editor-title";
   editorForm.append(heading);
   function field(title, type, value) {
     const label = noteElement("label", "editor-field", title);
     const input = noteElement(type === "textarea" ? "textarea" : "input");
     if (type !== "textarea") input.type = type;
-    else { input.rows = 7; input.className = "note-text"; }
+    else { input.rows = 12; input.className = "note-text"; }
     input.value = value;
     input.readOnly = noteState(day) === "trash";
     label.append(input); editorForm.append(label);
     return input;
   }
-  const name = field("Название экзамена для этой заметки", "text", noteName(plan, day));
-  const date = field("День подготовки", "date", day.date);
-  const examDate = field("Дата экзамена", "date", noteExamDate(plan, day));
-  const tasks = field("Задачи — по одной на строку", "textarea", day.tasks.join("\n"));
+  const name = field("Название", "text", noteName(plan, day));
+  const tasks = field("Текст", "textarea", day.tasks.join("\n"));
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   editorForm.append(error);
   if (noteState(day) !== "trash") {
     editorForm.noteDraft = true;
     attachNoteTools(editorForm, draft);
-    editorForm.append(noteElement("p", "note-help", "Изменения этой заметки применятся после сохранения. Остальные карточки не изменятся."));
+    const pin = iconAction(day.pinned ? "Открепить" : "Закрепить", "pin", () => commit("pin"));
+    pin.classList.add("editor-pin");
+    pin.setAttribute("aria-pressed", String(!!day.pinned));
+    editorForm.append(pin);
   }
   function commit(action) {
+    clearTimeout(saveTimer);
     const parsedTasks = tasks.value.split(/\r?\n/).map(text => text.trim()).filter(Boolean);
-    if (!name.value.trim() || !parsedTasks.length) { error.textContent = "Заполните название экзамена и хотя бы одну задачу."; return; }
-    if (!Number.isFinite(calendarDay(date.value)) || !Number.isFinite(calendarDay(examDate.value)) || calendarDay(date.value) >= calendarDay(examDate.value)) {
-      error.textContent = "День подготовки должен быть раньше даты экзамена."; return;
-    }
-    Object.assign(day, draft, { name: name.value.trim(), date: date.value, examDate: examDate.value, tasks: parsedTasks });
+    if (!name.value.trim() || !parsedTasks.length) { error.textContent = "Заполните название и текст заметки."; return false; }
+    Object.assign(day, draft, { name: name.value.trim(), tasks: parsedTasks });
     if (!draft.reminder) delete day.reminder;
-    if (action) { changeNoteState(plan, day, action); return; }
-    closeNoteEditor(); persist(); renderPlan();
-    document.getElementById("note-action-status").textContent = "Заметка сохранена.";
-    [...planContainer.querySelectorAll(".day")].find(card => card.dataset.noteId === day.id)?.focus({ preventScroll: true });
+    if (action) { changeNoteState(plan, day, action); return true; }
+    error.textContent = "";
+    persist();
+    document.getElementById("note-action-status").textContent = "Изменения сохранены автоматически.";
+    return true;
   }
-  editorForm.addEventListener("submit", event => { event.preventDefault(); if (noteState(day) !== "trash") commit(); });
+  let saveTimer;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => commit(), 250);
+  }
+  if (noteState(day) !== "trash") {
+    name.addEventListener("input", scheduleSave);
+    tasks.addEventListener("input", scheduleSave);
+  }
+  editorForm.addEventListener("submit", event => event.preventDefault());
   const actions = noteElement("div", "editor-actions");
   if (noteState(day) === "trash") {
     actions.append(noteButton("Восстановить", "Восстановить", () => changeNoteState(plan, day, "restore")));
     actions.append(noteButton("Удалить навсегда", "Удалить навсегда", () => changeNoteState(plan, day, "delete")));
   } else {
-    actions.append(noteButton(day.pinned ? "Открепить" : "Закрепить", day.pinned ? "Открепить" : "Закрепить", () => commit("pin")));
-    actions.append(noteButton("Архив", noteState(day) === "archive" ? "Из архива" : "В архив", () => commit(noteState(day) === "archive" ? "unarchive" : "archive")));
-    actions.append(noteButton("В корзину", "В корзину", () => changeNoteState(plan, day, "trash")));
+    actions.append(iconAction(noteState(day) === "archive" ? "Вернуть из архива" : "В архив", "archive", () => commit(noteState(day) === "archive" ? "unarchive" : "archive")));
+    actions.append(iconAction("В корзину", "trash", () => { if (commit()) changeNoteState(plan, day, "trash"); }));
   }
-  actions.append(noteButton("Закрыть без сохранения", "Закрыть", closeNoteEditor));
-  if (noteState(day) !== "trash") {
-    const save = noteElement("button", "primary-button", "Сохранить"); save.type = "submit"; actions.append(save);
-  }
+  actions.append(noteButton("Закрыть", "Закрыть", () => { if (noteState(day) === "trash" || commit()) { closeNoteEditor(); renderPlan(); } }));
   editorForm.append(actions); dialog.append(editorForm); document.body.append(dialog);
-  dialog.addEventListener("cancel", event => { event.preventDefault(); closeNoteEditor(); });
+  dialog.addEventListener("cancel", event => { event.preventDefault(); if (noteState(day) === "trash" || commit()) { closeNoteEditor(); renderPlan(); } });
   dialog.showModal(); name.focus();
 }

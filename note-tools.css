@@ -56,7 +56,7 @@
 .note-group-title { grid-column: 1 / -1; margin: 14px 0 0; font-size: 12px; letter-spacing: .08em; font-weight: 600; text-transform: uppercase; color: var(--muted); }
 #note-action-status { font-size: 13px; color: var(--success); }
 #note-action-status:empty { display: none; }
-.note-editor { padding: 0; width: min(620px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); border: 1px solid var(--border); border-radius: 14px; color: var(--text); background: var(--surface); box-shadow: 0 20px 80px #0006; }
+.note-editor { padding: 0; width: min(600px, calc(100vw - 32px)); height: min(760px, calc(100dvh - 32px)); overflow: hidden; border: 1px solid var(--border); border-radius: 14px; color: var(--text); background: var(--surface); box-shadow: 0 20px 80px #0006; }
 .note-editor::backdrop { background: #0008; backdrop-filter: blur(2px); }
 .note-editor[open] { animation: note-open .24s cubic-bezier(.2, .8, .2, 1); }
 .note-editor[open]::backdrop { animation: note-backdrop-in .24s ease-out; }
@@ -68,13 +68,18 @@
 @media (prefers-reduced-motion: reduce) {
   .note-editor[open], .note-editor[open]::backdrop { animation: none; }
 }
-.note-editor-form { padding: 24px; }
+.note-editor-form { position: relative; display: flex; flex-direction: column; height: 100%; padding: 24px; overflow: hidden; }
 .note-editor h2 { margin: 0 0 20px; font-size: 19px; letter-spacing: 0; color: var(--text); }
 .editor-field { margin: 0 0 16px; }
+.editor-field:has(.note-text) { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 .editor-field input, .editor-field textarea { display: block; width: 100%; min-width: 0; margin: 6px 0 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font: inherit; font-size: 14px; }
 .editor-field input:focus, .editor-field textarea:focus { outline: none; border-color: var(--focus); box-shadow: inset 0 0 0 1px var(--focus); }
+.editor-field textarea.note-text { flex: 1; min-height: 180px; resize: none; }
 .editor-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .editor-actions .note-button { width: auto; height: auto; border-radius: 6px; padding: 9px 12px; }
+.editor-actions .note-button:has(svg) { width: 38px; height: 38px; padding: 8px; border-radius: 50%; }
+.editor-pin { position: absolute; top: 18px; right: 18px; color: var(--muted); }
+.editor-pin[aria-pressed="true"] svg { fill: var(--focus); stroke: var(--text); }
 .note-editor .note-toolbar { margin: 12px 0; }
 .note-editor-form[data-color]:not([data-color="default"]) { background-color: var(--note-light); }
 [data-theme="dark"] .note-editor-form[data-color]:not([data-color="default"]) { background-color: var(--note-dark); }
