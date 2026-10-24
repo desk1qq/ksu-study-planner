@@ -771,6 +771,9 @@ html, body, .topbar, .search, .primary-button, .icon-button, .day, input, textar
 .day {
   animation: enter .3s ease backwards;
 }
+.day.skip-entry-animation {
+  animation: none;
+}
 .day:nth-child(2) {
   animation-delay: .04s;
 }

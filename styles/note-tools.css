@@ -280,6 +280,11 @@
 .day:not(.is-dragging) {
   transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, opacity .18s ease, transform .22s cubic-bezier(.2, .8, .2, 1);
 }
+.day.is-editor-origin {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
 .day > h3 {
   padding-right: 30px;
 }
@@ -410,6 +415,13 @@
 .note-editor[open]::backdrop {
   animation: note-backdrop-in .24s ease-out;
 }
+.note-editor[open].is-closing {
+  pointer-events: none;
+  animation: note-close .22s cubic-bezier(.4, 0, 1, 1) forwards;
+}
+.note-editor[open].is-closing::backdrop {
+  animation: note-backdrop-out .22s ease-in forwards;
+}
 @keyframes note-open {
   from {
     opacity: 0;
@@ -426,6 +438,26 @@
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes note-close {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: .08;
+    border-radius: 9px;
+    transform: translate(var(--note-close-x, 0), var(--note-close-y, 12px))
+      scale(var(--note-close-scale-x, .975), var(--note-close-scale-y, .975));
+  }
+}
+@keyframes note-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -452,6 +484,8 @@
   z-index: 4;
   top: 62px;
   left: 50%;
+  display: flex;
+  align-items: center;
   width: max-content;
   max-width: calc(100% - 48px);
   margin: 0;
@@ -466,6 +500,14 @@
   pointer-events: none;
   transform: translate(-50%, -8px);
   transition: opacity .18s ease, transform .18s ease;
+}
+.editor-notice-action {
+  width: auto;
+  height: auto;
+  margin-left: 12px;
+  padding: 5px 8px;
+  color: #8ab4f8;
+  font-weight: 600;
 }
 .editor-lock-notice.is-visible {
   opacity: 1;
