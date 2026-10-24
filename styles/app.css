@@ -259,6 +259,11 @@ button.nav-item {
   font-size: 12px;
   color: var(--muted);
 }
+.card-exam-date {
+  margin: -10px 0 16px;
+  color: var(--muted);
+  font-size: 11px;
+}
 .sidebar-caption {
   margin: 38px 26px;
   color: #80868b;

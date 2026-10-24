@@ -181,10 +181,18 @@ function noteExamDate(plan, day) {
   return day.examDate || plan.examDate;
 }
 
-function formatStudyWeekdays(weekdays) {
-  if (!Array.isArray(weekdays) || !weekdays.length) return "";
-  const labels = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-  return weekdays.map(day => labels[day]).filter(Boolean).join(", ");
+function weekdayName(dayNumber) {
+  return ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"][dayNumber] || "";
+}
+
+function noteWeekday(plan, day) {
+  const calendarDate = calendarDay(day.date);
+  if (Number.isFinite(calendarDate)) {
+    return weekdayName(new Date(calendarDate * DAY_MS).getUTCDay());
+  }
+
+  if (!Array.isArray(plan.weekdays)) return "";
+  return plan.weekdays.map(weekdayName).filter(Boolean).join(", ");
 }
 
 function switchNotesView(view) {
@@ -296,13 +304,12 @@ function createNoteCard(plan, day, group) {
     card.append(noteElement("h3", "", formatDate(day.date)));
   }
 
-  const metadata = [];
-  if (name) metadata.push(name);
-  if (hasExamDate) metadata.push(`Экзамен: ${formatDate(examDate)}`);
-  const studyWeekdays = formatStudyWeekdays(plan.weekdays);
-  if (studyWeekdays) metadata.push(`Дни: ${studyWeekdays}`);
-  if (metadata.length) {
-    card.append(noteElement("p", "card-exam", metadata.join(" · ")));
+  const titleParts = [name, noteWeekday(plan, day)].filter(Boolean);
+  if (titleParts.length) {
+    card.append(noteElement("p", "card-exam", titleParts.join(" ▪ ")));
+  }
+  if (hasExamDate) {
+    card.append(noteElement("p", "card-exam-date", `Экзамен: ${formatDate(examDate)}`));
   }
 
   card.append(taskContainer(day));
