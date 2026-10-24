@@ -13,9 +13,13 @@
       document.documentElement.dataset.notesView = ["active", "archive", "trash"].includes(savedView)
         ? savedView
         : "active";
+      document.documentElement.dataset.sidebarState = localStorage.getItem("exam-planner-sidebar") === "collapsed"
+        ? "collapsed"
+        : "expanded";
     } catch {
       document.documentElement.dataset.theme = "light";
       document.documentElement.dataset.notesView = "active";
+      document.documentElement.dataset.sidebarState = "expanded";
     }
   </script>
   <link rel="stylesheet" href="keep.css">

@@ -6,6 +6,23 @@ const menuToggle = document.getElementById("menu-toggle");
 const noResults = document.getElementById("no-results");
 const themeToggle = document.getElementById("theme-toggle");
 const themeStatus = document.getElementById("theme-status");
+const SIDEBAR_STORAGE_KEY = "exam-planner-sidebar";
+
+function setSidebarCollapsed(collapsed, { save = false } = {}) {
+  document.body.classList.toggle("sidebar-hidden", collapsed);
+  document.documentElement.dataset.sidebarState = collapsed ? "collapsed" : "expanded";
+  menuToggle.setAttribute("aria-expanded", String(!collapsed));
+  menuToggle.setAttribute("aria-label", collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель");
+
+  if (!save) return;
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? "collapsed" : "expanded");
+  } catch {
+    // Панель продолжает работать, даже если сохранение настроек запрещено.
+  }
+}
+
+setSidebarCollapsed(document.documentElement.dataset.sidebarState === "collapsed");
 
 function updateThemeButton() {
   const dark = document.documentElement.dataset.theme === "dark";
@@ -61,9 +78,7 @@ viewToggle.addEventListener("click", () => {
 });
 
 menuToggle.addEventListener("click", () => {
-  const collapsed = document.body.classList.toggle("sidebar-hidden");
-  menuToggle.setAttribute("aria-expanded", String(!collapsed));
-  menuToggle.setAttribute("aria-label", collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель");
+  setSidebarCollapsed(!document.body.classList.contains("sidebar-hidden"), { save: true });
 });
 
 filterNotes();

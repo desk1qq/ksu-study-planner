@@ -456,16 +456,19 @@ footer {
   font-size: 11px;
   color: #80868b;
 }
-.sidebar-hidden .workspace {
+.sidebar-hidden .workspace,
+html[data-sidebar-state="collapsed"] .workspace {
   grid-template-columns: 64px minmax(0, 1fr);
 }
-.sidebar-hidden aside {
+.sidebar-hidden aside,
+html[data-sidebar-state="collapsed"] aside {
   opacity: 1;
   transform: translateX(0);
   visibility: visible;
   pointer-events: auto;
 }
-.sidebar-hidden .nav-item {
+.sidebar-hidden .nav-item,
+html[data-sidebar-state="collapsed"] .nav-item {
   justify-content: center;
   gap: 0;
   width: 48px;
@@ -475,11 +478,13 @@ footer {
   border-radius: 50%;
   font-size: 0;
 }
-.sidebar-hidden .nav-item svg {
+.sidebar-hidden .nav-item svg,
+html[data-sidebar-state="collapsed"] .nav-item svg {
   width: 22px;
   height: 22px;
 }
-.sidebar-hidden .sidebar-caption {
+.sidebar-hidden .sidebar-caption,
+html[data-sidebar-state="collapsed"] .sidebar-caption {
   display: none;
 }
 #plan.list-view {
@@ -521,7 +526,7 @@ footer {
     flex-basis: 100%;
     max-width: none;
   }
-  .workspace, .sidebar-hidden .workspace {
+  .workspace, .sidebar-hidden .workspace, html[data-sidebar-state="collapsed"] .workspace {
     grid-template-columns: minmax(0, 1fr);
   }
   aside {
@@ -529,7 +534,8 @@ footer {
     padding: 8px 12px;
     transition: max-height .24s ease, opacity .18s ease, transform .24s ease, padding .24s ease, visibility 0s;
   }
-  .sidebar-hidden aside {
+  .sidebar-hidden aside,
+  html[data-sidebar-state="collapsed"] aside {
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
