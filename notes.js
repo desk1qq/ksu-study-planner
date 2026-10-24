@@ -87,8 +87,8 @@ function createNoteCard(plan, day, group) {
   card.setAttribute("aria-label", `${noteName(plan, day)}, ${formatDate(day.date)}. Открыть заметку.`);
   card.append(noteElement("h3", "", formatDate(day.date)));
   card.append(noteElement("p", "card-exam", `${noteName(plan, day)} · Экзамен: ${formatDate(noteExamDate(plan, day))}`));
-  const list = noteElement("ol");
-  for (const task of day.tasks) list.append(noteElement("li", "", task));
+  const list = noteElement(day.listType === "ordered" ? "ol" : day.listType === "unordered" ? "ul" : "div", "task-content");
+  for (const task of day.tasks) list.append(noteElement(day.listType === "plain" || !day.listType ? "p" : "li", "", task));
   card.append(list);
   if (noteState(day) !== "trash") {
     attachNoteTools(card, day);
@@ -179,7 +179,7 @@ function openNoteEditor(plan, day) {
     return input;
   }
   const name = field("Название", "text", noteName(plan, day));
-  const tasks = field("Текст", "textarea", day.tasks.join("\n"));
+  const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   editorForm.append(error);
   if (noteState(day) !== "trash") {
@@ -192,9 +192,9 @@ function openNoteEditor(plan, day) {
   }
   function commit(action) {
     clearTimeout(saveTimer);
-    const parsedTasks = tasks.value.split(/\r?\n/).map(text => text.trim()).filter(Boolean);
-    if (!name.value.trim() || !parsedTasks.length) { error.textContent = "Заполните название и текст заметки."; return false; }
-    Object.assign(day, draft, { name: name.value.trim(), tasks: parsedTasks });
+    const parsed = parseTaskInput(tasks.value);
+    if (!name.value.trim() || !parsed.tasks.length) { error.textContent = "Заполните название и текст заметки."; return false; }
+    Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
     if (!draft.reminder) delete day.reminder;
     if (action) { changeNoteState(plan, day, action); return true; }
     error.textContent = "";
@@ -210,6 +210,7 @@ function openNoteEditor(plan, day) {
   if (noteState(day) !== "trash") {
     name.addEventListener("input", scheduleSave);
     tasks.addEventListener("input", scheduleSave);
+    tasks.addEventListener("keydown", continueTaskList);
   }
   editorForm.addEventListener("submit", event => event.preventDefault());
   const actions = noteElement("div", "editor-actions");

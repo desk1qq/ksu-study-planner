@@ -42,14 +42,48 @@ function dateString(day) {
   return new Date(day * DAY_MS).toISOString().slice(0, 10);
 }
 
-function distribute(tasks, start, end) {
+function parseTaskInput(value) {
+  const lines = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const first = lines[0] || "";
+  const listType = /^\d+[.)]\s+/.test(first) ? "ordered" : /^[-–—]\s+/.test(first) ? "unordered" : "plain";
+  const tasks = lines.map(line => listType === "ordered"
+    ? line.replace(/^\d+[.)]\s*/, "")
+    : listType === "unordered" ? line.replace(/^[-–—]\s*/, "") : line
+  ).filter(Boolean);
+  return { tasks, listType };
+}
+
+function formatTaskInput(tasks, listType) {
+  if (listType === "ordered") return tasks.map((task, index) => `${index + 1}. ${task}`).join("\n");
+  if (listType === "unordered") return tasks.map(task => `- ${task}`).join("\n");
+  return tasks.join("\n");
+}
+
+function continueTaskList(event) {
+  if (event.key !== "Enter" || event.shiftKey) return;
+  const input = event.currentTarget;
+  const before = input.value.slice(0, input.selectionStart);
+  const line = before.split(/\r?\n/).at(-1);
+  const numbered = line.match(/^\s*(\d+)[.)]\s+/);
+  const bulleted = line.match(/^\s*[-–—]\s+/);
+  if (!numbered && !bulleted) return;
+  event.preventDefault();
+  const prefix = numbered ? `${Number(numbered[1]) + 1}. ` : "- ";
+  const start = input.selectionStart;
+  input.setRangeText(`\n${prefix}`, start, input.selectionEnd, "end");
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+tasksInput.addEventListener("keydown", continueTaskList);
+
+function distribute(tasks, start, end, listType) {
   const days = end - start;
   const base = Math.floor(tasks.length / days);
   const extra = tasks.length % days;
   let offset = 0;
   return Array.from({ length: Math.min(days, tasks.length) }, (_, index) => {
     const count = base + (index < extra ? 1 : 0);
-    const entry = { date: dateString(start + index), tasks: tasks.slice(offset, offset + count) };
+    const entry = { date: dateString(start + index), tasks: tasks.slice(offset, offset + count), listType };
     offset += count;
     return entry;
   });
@@ -60,7 +94,7 @@ function persist() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       name: nameInput.value, date: dateInput.value, tasks: tasksInput.value, plans: savedPlans
     }));
-    storageMessage.textContent = "Данные сохранены в этом браузере.";
+    storageMessage.textContent = "";
   } catch {
     storageMessage.textContent = "Браузер не разрешил сохранение. План работает, но после закрытия страницы данные могут потеряться.";
   }
@@ -87,7 +121,8 @@ form.addEventListener("input", () => {
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  const tasks = tasksInput.value.split(/\r?\n/).map(task => task.trim()).filter(Boolean);
+  const parsed = parseTaskInput(tasksInput.value);
+  const tasks = parsed.tasks;
   const start = todayDay();
   const end = calendarDay(dateInput.value);
   let error = "";
@@ -105,7 +140,7 @@ form.addEventListener("submit", (event) => {
     invalidInput.focus();
     return;
   }
-  savedPlans.push({ name: nameInput.value.trim(), examDate: dateInput.value, days: distribute(tasks, start, end) });
+  savedPlans.push({ name: nameInput.value.trim(), examDate: dateInput.value, days: distribute(tasks, start, end, parsed.listType) });
   form.reset();
   document.getElementById("search").value = "";
   currentNotesView = "active";

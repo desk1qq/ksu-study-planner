@@ -81,7 +81,7 @@ window.addEventListener("scroll", event => {
 
 function applyNoteAppearance(card, day) {
   const format = day.format || {};
-  const list = card.querySelector(".note-text") || card.querySelector("ol");
+  const list = card.querySelector(".note-text") || card.querySelector(".task-content");
   list.style.fontSize = format.size === "h1" ? "22px" : format.size === "h2" ? "18px" : "14px";
   list.style.fontWeight = format.bold ? "700" : "400";
   list.style.fontStyle = format.italic ? "italic" : "normal";
@@ -154,7 +154,7 @@ function reminderPreset(kind, now = new Date()) {
 }
 
 function buildReminderPanel(panel, card, day) {
-  panel.append(noteElement("p", "note-help", "Напоминание появится здесь, пока страница открыта. Если срок прошёл — при следующем открытии."));
+  panel.append(noteElement("p", "note-help", "Напоминания сохраняются в приложении."));
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   function save(date) {
     if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
@@ -163,7 +163,7 @@ function buildReminderPanel(panel, card, day) {
     day.reminder = date.toISOString();
     saveNoteOptions(card); updateReminderBadge(card, day); checkReminders(); closeNotePanel(true);
   }
-  for (const [kind, label, time] of [["today", "Сегодня", "18:00"], ["tomorrow", "Завтра", "08:00"], ["week", "На следующей неделе", "пн, 08:00"]]) {
+  for (const [kind, label, time] of [["tomorrow", "Завтра", "08:00"], ["week", "На следующей неделе", "пн, 08:00"]]) {
     const date = reminderPreset(kind);
     const button = noteButton(label + " " + time, "", () => save(date));
     button.classList.add("reminder-option");
@@ -171,7 +171,7 @@ function buildReminderPanel(panel, card, day) {
     button.disabled = date.getTime() <= Date.now();
     panel.append(button);
   }
-  const label = noteElement("label", "reminder-custom", "Выбрать дату и время");
+  const label = noteElement("label", "reminder-custom", "◷  Выбрать дату и время");
   const input = noteElement("input"); input.type = "datetime-local";
   label.append(input); panel.append(label);
   const actions = noteElement("div", "reminder-actions");

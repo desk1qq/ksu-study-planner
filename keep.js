@@ -34,7 +34,7 @@ function filterNotes() {
   const cards = [...planContainer.querySelectorAll(".day")];
   let visible = 0;
   for (const card of cards) {
-    const content = [card.querySelector("h3"), card.querySelector(".card-exam"), card.querySelector("ol")]
+    const content = [card.querySelector("h3"), card.querySelector(".card-exam"), card.querySelector(".task-content")]
       .map(element => element.textContent).join(" ");
     card.hidden = !content.toLocaleLowerCase("ru-RU").includes(query);
     if (!card.hidden) visible += 1;

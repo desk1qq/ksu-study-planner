@@ -61,7 +61,9 @@ h2 { color: #5f6368; font-size: 11px; font-weight: 600; letter-spacing: .1em; ma
 .day:nth-child(5n+4) { background: #f6e2dd; border-color: #ead7d2; }
 .day:nth-child(5n+5) { background: #e9e3f1; border-color: #ddd7e5; }
 .day h3 { font-size: 15px; margin: 0 0 16px; font-weight: 600; }
-.day ol { padding-left: 20px; margin: 0; }
+.day ol, .day ul { padding-left: 20px; margin: 0; }
+.day .task-content p { margin: 0; white-space: pre-wrap; }
+.day .task-content p + p { margin-top: 8px; }
 .day li { padding-left: 3px; line-height: 1.7; }
 .day li + li { margin-top: 10px; }
 .empty { grid-column: 1 / -1; text-align: center; color: #80868b; padding: 64px 16px; line-height: 1.9; }
