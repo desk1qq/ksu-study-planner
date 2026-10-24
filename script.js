@@ -10,7 +10,19 @@ const message = document.getElementById("message");
 const storageMessage = document.getElementById("storage-message");
 const planContainer = document.getElementById("plan");
 const summary = document.getElementById("plan-summary");
+const composer = document.querySelector(".composer");
+const composerToggle = document.getElementById("composer-toggle");
 let savedPlans = [];
+
+function setComposerExpanded(expanded) {
+  composer.classList.toggle("is-collapsed", !expanded);
+  composerToggle.setAttribute("aria-expanded", String(expanded));
+  if (expanded) nameInput.focus({ preventScroll: true });
+}
+
+composerToggle.addEventListener("click", () => setComposerExpanded(true));
+composer.addEventListener("mouseenter", () => setComposerExpanded(true));
+composer.addEventListener("focusin", () => setComposerExpanded(true));
 
 // UTC используется только как шкала календарных дней, а не местного времени.
 function calendarDay(value) {
@@ -100,15 +112,7 @@ form.addEventListener("submit", (event) => {
   renderPlan();
   persist();
   message.textContent = "Задачи добавлены. Можно создать следующий план.";
-  nameInput.focus();
-});
-
-document.getElementById("new-exam").addEventListener("click", () => {
-  switchNotesView("active");
-  form.scrollIntoView({ behavior: "auto", block: "center" });
-  nameInput.focus({ preventScroll: true });
-  message.className = "";
-  message.textContent = "Введите экзамен и задачи для нового плана.";
+  setComposerExpanded(false);
 });
 
 function validPlan(plan) {
