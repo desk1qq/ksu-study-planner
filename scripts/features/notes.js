@@ -116,10 +116,16 @@ function noteState(day) {
 }
 
 function noteEntries() {
-  return savedPlans.flatMap(plan => plan.days.map(day => {
-    if (!day.id) day.id = crypto.randomUUID();
+  let generatedId = false;
+  const entries = savedPlans.flatMap(plan => plan.days.map(day => {
+    if (!day.id) {
+      day.id = crypto.randomUUID();
+      generatedId = true;
+    }
     return { plan, day };
   }));
+  if (generatedId) persist();
+  return entries;
 }
 
 function noteWeekdayOrder(plan, day) {

@@ -86,6 +86,19 @@ window.addEventListener("scroll", event => {
   if (notePanel && !notePanel.contains(event.target)) closeNotePanel();
 }, true);
 
+function automaticNoteColor(day) {
+  const palette = ["sand", "green", "blue", "red", "purple"];
+  if (palette.includes(day.autoColor)) return day.autoColor;
+
+  const source = day.id || day.date || day.tasks.join("|");
+  let hash = 0;
+  for (const character of source) {
+    hash = ((hash << 5) - hash + character.charCodeAt(0)) | 0;
+  }
+  day.autoColor = palette[Math.abs(hash) % palette.length];
+  return day.autoColor;
+}
+
 function applyNoteAppearance(card, day) {
   const format = day.format || {};
   const list = card.querySelector(".note-text") || card.querySelector(".task-content");
@@ -93,7 +106,8 @@ function applyNoteAppearance(card, day) {
   list.style.fontWeight = format.bold ? "700" : "400";
   list.style.fontStyle = format.italic ? "italic" : "normal";
   list.style.textDecoration = format.underline ? "underline" : "none";
-  card.dataset.color = NOTE_COLORS.some(([key]) => key === day.color) ? day.color : "default";
+  const selectedColor = NOTE_COLORS.some(([key]) => key === day.color) ? day.color : "default";
+  card.dataset.color = selectedColor === "default" ? automaticNoteColor(day) : selectedColor;
   card.dataset.pattern = NOTE_PATTERNS.some(([key]) => key === day.pattern) ? day.pattern : "none";
 }
 

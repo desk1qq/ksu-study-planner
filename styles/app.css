@@ -505,22 +505,6 @@ h2 {
 .day:hover {
   box-shadow: 0 2px 6px #0002;
 }
-.day:nth-child(5n+2) {
-  background: #e2f6d3;
-  border-color: #d5e7c8;
-}
-.day:nth-child(5n+3) {
-  background: #d3edf0;
-  border-color: #c6e1e4;
-}
-.day:nth-child(5n+4) {
-  background: #f6e2dd;
-  border-color: #ead7d2;
-}
-.day:nth-child(5n+5) {
-  background: #e9e3f1;
-  border-color: #ddd7e5;
-}
 .day h3 {
   font-size: 15px;
   margin: 0 0 16px;
@@ -764,22 +748,6 @@ input::placeholder, textarea::placeholder {
 [data-theme="dark"] .day {
   background: #49432c;
   border-color: #6a6041;
-}
-[data-theme="dark"] .day:nth-child(5n+2) {
-  background: #304639;
-  border-color: #4b6754;
-}
-[data-theme="dark"] .day:nth-child(5n+3) {
-  background: #2d464b;
-  border-color: #47666c;
-}
-[data-theme="dark"] .day:nth-child(5n+4) {
-  background: #503b38;
-  border-color: #715450;
-}
-[data-theme="dark"] .day:nth-child(5n+5) {
-  background: #423b50;
-  border-color: #605571;
 }
 .sun, [data-theme="dark"] .moon {
   display: none;
