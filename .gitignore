@@ -1,0 +1,24 @@
+# Локальные настройки и секреты
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+.codex/
+.agents/
+
+# Редакторы, ОС и временные файлы
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.bak
+*~
+node_modules/
+dist/
+coverage/
+.qa/

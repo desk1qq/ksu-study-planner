@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Учебные заметки — План подготовки</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem("exam-planner-theme") === "dark" ? "dark" : "light";
+    } catch { document.documentElement.dataset.theme = "light"; }
+  </script>
+  <link rel="stylesheet" href="keep.css">
+  <link rel="stylesheet" href="note-tools.css">
+  <script src="note-tools.js" defer></script>
+  <script src="notes.js" defer></script>
+  <script src="script.js" defer></script>
+  <script src="keep.js" defer></script>
+</head>
+<body>
+  <svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="bulb" viewBox="0 0 24 24"><path d="M9 18h6M9 21h6M8 14a7 7 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2Z"/></symbol>
+    <symbol id="search-icon" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></symbol>
+    <symbol id="grid-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="calendar-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18"/></symbol>
+  </svg>
+  <header class="topbar">
+    <button id="menu-toggle" class="icon-button" type="button" aria-label="Скрыть боковую панель" aria-expanded="true" aria-controls="sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <a class="brand" href="keep.html" aria-label="KSU — Учебные заметки"><span class="brand-icon"><svg aria-hidden="true"><use href="#bulb"/></svg></span><span class="brand-wordmark"><span class="brand-prefix">KSU</span><span>Учебные заметки</span></span></a>
+    <label class="search"><svg aria-hidden="true"><use href="#search-icon"/></svg><input id="search" type="search" placeholder="Поиск по задачам и датам" aria-label="Поиск по задачам и датам"></label>
+    <button id="view-toggle" class="icon-button" type="button" aria-label="Показать списком" aria-pressed="false" title="Переключить вид"><svg aria-hidden="true"><use href="#grid-icon"/></svg></button>
+    <button id="theme-toggle" class="icon-button" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Включить тёмную тему"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button>
+    <span class="avatar" title="Локальный план подготовки" aria-label="Локальный план подготовки">У</span>
+  </header>
+  <div class="workspace">
+    <aside id="sidebar">
+      <nav aria-label="Разделы">
+        <button class="nav-item active" type="button" data-view="active" aria-current="page"><svg aria-hidden="true"><use href="#bulb"/></svg>План подготовки</button>
+        <button id="new-exam" class="nav-item" type="button"><svg aria-hidden="true"><use href="#calendar-icon"/></svg>Новый экзамен</button>
+        <button class="nav-item" type="button" data-view="archive"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v13H4zM3 3h18v5H3zM9 12h6"/></svg>Архив</button>
+        <button class="nav-item" type="button" data-view="trash"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>Корзина</button>
+      </nav>
+      <p class="sidebar-caption">Маленькие шаги.<br>Большой результат.</p>
+    </aside>
+    <main>
+      <section class="composer" aria-labelledby="composer-title">
+        <h1 id="composer-title">К чему готовимся?</h1>
+        <form id="planner-form" novalidate>
+          <div class="exam-fields">
+            <div><label for="exam-name">Экзамен</label><input id="exam-name" type="text" placeholder="Название экзамена" required></div>
+            <div><label for="exam-date">Дата экзамена</label><input id="exam-date" type="date" required></div>
+          </div>
+          <label for="tasks">Что нужно изучить?</label>
+          <textarea id="tasks" rows="3" placeholder="Заметка..." aria-describedby="tasks-hint" required></textarea>
+          <div class="composer-bottom"><p id="tasks-hint">Каждая строка - отдельная задача.</p><button class="primary-button" type="submit">Составить план</button></div>
+          <p id="message" role="status" aria-live="polite"></p>
+          <p id="storage-message" role="status"></p>
+        </form>
+      </section>
+      <section id="notes" aria-labelledby="notes-title">
+        <p id="reminder-alert" role="status" aria-live="polite" hidden></p>
+        <div class="section-heading"><h2 id="notes-title">МОЙ ПЛАН</h2><span>Один день — одна заметка</span></div>
+        <p id="plan-summary">Добавьте задачи — разложим подготовку по дням.</p>
+        <p id="note-action-status" role="status" aria-live="polite"></p>
+        <div id="plan"><p class="empty">Ваши учебные заметки появятся здесь.<br>Начните с экзамена и нескольких задач.</p></div>
+        <p id="no-results" hidden role="status">Ничего не найдено. Попробуйте другое слово.</p>
+      </section>
+      <footer>В вашем темпе · Только дни с задачами · Без сервера</footer>
+      <p id="theme-status" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+</body>
+</html>
