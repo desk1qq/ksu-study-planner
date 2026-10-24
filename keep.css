@@ -464,7 +464,6 @@ footer {
   transform: translateX(0);
   visibility: visible;
   pointer-events: auto;
-  border-right: 1px solid var(--border);
 }
 .sidebar-hidden .nav-item {
   justify-content: center;
@@ -534,7 +533,6 @@ footer {
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
-    border-right: 0;
     opacity: 0;
     transform: translateY(-8px);
     visibility: hidden;
