@@ -3,28 +3,37 @@
 let currentNotesView = "active";
 let noteEditor = null;
 const deleteConfirm = document.getElementById("delete-confirm");
-let pendingDeletion = null;
+const deleteConfirmTitle = document.getElementById("delete-confirm-title");
+const trashControls = document.getElementById("trash-controls");
+const emptyTrashButton = document.getElementById("empty-trash");
+const TRASH_RETENTION_MS = 7 * DAY_MS;
+let pendingConfirmation = null;
 
 deleteConfirm.querySelector("form").addEventListener("submit", event => {
   event.preventDefault();
   const confirmed = event.submitter?.value === "delete";
-  const deletion = pendingDeletion;
-  pendingDeletion = null;
+  const action = pendingConfirmation;
+  pendingConfirmation = null;
   deleteConfirm.close(confirmed ? "delete" : "cancel");
 
-  if (confirmed && deletion) {
-    deleteNotePermanently(deletion.plan, deletion.day);
+  if (confirmed && action) {
+    action();
   }
 });
 
 deleteConfirm.addEventListener("cancel", () => {
-  pendingDeletion = null;
+  pendingConfirmation = null;
 });
 
-function requestPermanentDeletion(plan, day) {
-  pendingDeletion = { plan, day };
+function requestConfirmation(text, action) {
+  pendingConfirmation = action;
+  deleteConfirmTitle.textContent = text;
   deleteConfirm.returnValue = "cancel";
   deleteConfirm.showModal();
+}
+
+function requestPermanentDeletion(plan, day) {
+  requestConfirmation("Удалить навсегда?", () => deleteNotePermanently(plan, day));
 }
 
 function deleteNotePermanently(plan, day) {
@@ -48,6 +57,46 @@ function noteEntries() {
   }));
 }
 
+function purgeExpiredTrash(now = Date.now()) {
+  let changed = false;
+
+  for (const plan of savedPlans) {
+    plan.days = plan.days.filter(day => {
+      if (noteState(day) !== "trash") return true;
+
+      const trashedAt = Date.parse(day.trashedAt);
+      if (!Number.isFinite(trashedAt)) {
+        day.trashedAt = new Date(now).toISOString();
+        changed = true;
+        return true;
+      }
+
+      if (now - trashedAt < TRASH_RETENTION_MS) return true;
+      changed = true;
+      return false;
+    });
+  }
+
+  savedPlans = savedPlans.filter(plan => plan.days.length);
+  if (changed) persist();
+}
+
+function emptyTrash() {
+  for (const plan of savedPlans) {
+    plan.days = plan.days.filter(day => noteState(day) !== "trash");
+  }
+
+  savedPlans = savedPlans.filter(plan => plan.days.length);
+  persist();
+  renderPlan();
+  document.getElementById("note-action-status").textContent = "Корзина очищена.";
+  document.querySelector('[data-view="trash"]').focus({ preventScroll: true });
+}
+
+emptyTrashButton.addEventListener("click", () => {
+  requestConfirmation("Очистить корзину?", emptyTrash);
+});
+
 function noteName(plan, day) { return day.name || plan.name; }
 function noteExamDate(plan, day) { return day.examDate || plan.examDate; }
 
@@ -63,9 +112,11 @@ for (const button of document.querySelectorAll("[data-view]")) {
 }
 
 function renderNoteCollection() {
+  purgeExpiredTrash();
   const titles = { active: "МОЙ ПЛАН", archive: "АРХИВ", trash: "КОРЗИНА" };
   document.getElementById("notes-title").textContent = titles[currentNotesView];
   document.querySelector(".composer").hidden = currentNotesView !== "active";
+  trashControls.hidden = currentNotesView !== "trash";
   for (const button of document.querySelectorAll("[data-view]")) {
     const active = button.dataset.view === currentNotesView;
     button.classList.toggle("active", active);
@@ -192,10 +243,15 @@ function changeNoteState(plan, day, action) {
   } else if (action === "unarchive") {
     day.state = "active"; status = "Заметка возвращена из архива.";
   } else if (action === "trash") {
-    day.previousState = "active"; day.state = "trash"; day.pinned = false; status = "Заметка перемещена в корзину.";
+    day.previousState = "active";
+    day.state = "trash";
+    day.pinned = false;
+    day.trashedAt = new Date().toISOString();
+    status = "Заметка перемещена в корзину.";
   } else if (action === "restore") {
     day.state = "active";
     delete day.previousState;
+    delete day.trashedAt;
     status = "Заметка восстановлена в плане подготовки.";
   } else if (action === "delete") {
     if (noteState(day) !== "trash") return false;
