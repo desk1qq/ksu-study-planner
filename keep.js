@@ -3,12 +3,14 @@
 const searchInput = document.getElementById("search");
 const viewToggle = document.getElementById("view-toggle");
 const menuToggle = document.getElementById("menu-toggle");
+const sidebar = document.getElementById("sidebar");
 const noResults = document.getElementById("no-results");
 const themeToggle = document.getElementById("theme-toggle");
 const themeStatus = document.getElementById("theme-status");
 const SIDEBAR_STORAGE_KEY = "exam-planner-sidebar";
 
 function setSidebarCollapsed(collapsed, { save = false } = {}) {
+  document.body.classList.remove("sidebar-peek");
   document.body.classList.toggle("sidebar-hidden", collapsed);
   document.documentElement.dataset.sidebarState = collapsed ? "collapsed" : "expanded";
   menuToggle.setAttribute("aria-expanded", String(!collapsed));
@@ -23,6 +25,18 @@ function setSidebarCollapsed(collapsed, { save = false } = {}) {
 }
 
 setSidebarCollapsed(document.documentElement.dataset.sidebarState === "collapsed");
+
+sidebar.addEventListener("pointerenter", event => {
+  if (event.pointerType && event.pointerType !== "mouse") return;
+  if (!window.matchMedia("(hover: hover) and (min-width: 761px)").matches) return;
+  if (document.documentElement.dataset.sidebarState !== "collapsed") return;
+  document.body.classList.add("sidebar-peek");
+});
+
+sidebar.addEventListener("pointerleave", event => {
+  if (event.pointerType && event.pointerType !== "mouse") return;
+  document.body.classList.remove("sidebar-peek");
+});
 
 function updateThemeButton() {
   const dark = document.documentElement.dataset.theme === "dark";
