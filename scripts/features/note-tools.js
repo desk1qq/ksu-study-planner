@@ -116,6 +116,11 @@ function saveNoteOptions(card) {
   if (!card.noteDraft) persist();
 }
 
+function showToolFeedback(card, text) {
+  if (typeof card.showNotice === "function") card.showNotice(text);
+  else if (typeof showNoteToast === "function") showNoteToast(text);
+}
+
 function buildFormatPanel(panel, card, day) {
   panel.append(noteElement("p", "note-help", "Формат применяется ко всем задачам этой карточки."));
   const row = noteElement("div", "format-options");
@@ -204,7 +209,14 @@ function buildReminderPanel(panel, card, day) {
       return;
     }
     day.reminder = date.toISOString();
-    saveNoteOptions(card); updateReminderBadge(card, day); checkReminders(); closeNotePanel(true);
+    saveNoteOptions(card);
+    updateReminderBadge(card, day);
+    checkReminders();
+    closeNotePanel(true);
+    const formattedDate = new Intl.DateTimeFormat("ru-RU", {
+      day: "numeric", month: "long", hour: "2-digit", minute: "2-digit"
+    }).format(date);
+    showToolFeedback(card, `Напоминание сохранено: ${formattedDate}.`);
   }
   for (const [kind, label, time] of [["tomorrow", "Завтра", "08:00"], ["week", "На следующей неделе", "пн, 08:00"]]) {
     const date = reminderPreset(kind);
@@ -225,6 +237,7 @@ function buildReminderPanel(panel, card, day) {
     updateReminderBadge(card, day);
     checkReminders();
     closeNotePanel(true);
+    showToolFeedback(card, "Напоминание удалено.");
   }));
   panel.append(actions, error);
 }

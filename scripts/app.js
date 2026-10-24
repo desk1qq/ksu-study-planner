@@ -135,6 +135,9 @@ function createNote({ strictDate = false } = {}) {
   clearComposerAfterSave();
   renderPlan();
   persist();
+  if (!examDate && typeof showNoteToast === "function") {
+    showNoteToast("Заметка создана без даты экзамена. Календарное распределение не выполнено.");
+  }
   return true;
 }
 
@@ -238,7 +241,7 @@ document.addEventListener("pointerdown", event => {
   if (composer.contains(event.target)) return;
 
   if (parseTaskInput(tasksInput.value).tasks.length) {
-    createNote();
+    createNote({ strictDate: true });
   } else {
     setComposerExpanded(false);
   }

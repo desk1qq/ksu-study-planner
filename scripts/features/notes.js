@@ -42,6 +42,7 @@ let toastTimer = null;
 let toastHideTimer = null;
 let toastUndoAction = null;
 let trashPurgeTimer = null;
+let actionStatusTimer = null;
 let draggedNote = null;
 let noteWasDragged = false;
 
@@ -64,6 +65,14 @@ function showNoteToast(message, undoAction) {
   noteToast.hidden = false;
   requestAnimationFrame(() => noteToast.classList.add("is-visible"));
   toastTimer = setTimeout(hideNoteToast, TOAST_DURATION_MS);
+}
+
+function showTemporaryActionStatus(message, duration = 2000) {
+  clearTimeout(actionStatusTimer);
+  noteActionStatus.textContent = message;
+  actionStatusTimer = setTimeout(() => {
+    if (noteActionStatus.textContent === message) noteActionStatus.textContent = "";
+  }, duration);
 }
 
 noteToastUndo.addEventListener("click", () => {
@@ -592,7 +601,8 @@ function changeNoteState(plan, day, action) {
       renderPlan();
     });
   } else {
-    noteActionStatus.textContent = status;
+    if (action === "pin") showTemporaryActionStatus(status);
+    else noteActionStatus.textContent = status;
   }
   const next = [...planContainer.querySelectorAll(".day")].find(card => card.dataset.noteId === day.id);
   (next || document.querySelector(`[data-view="${currentNotesView}"]`)).focus({ preventScroll: true });
@@ -621,19 +631,23 @@ function openNoteEditor(plan, day) {
   const heading = noteElement("h2");
   heading.id = "note-editor-title";
   editorForm.append(heading);
-  const lockNotice = noteElement("p", "editor-lock-notice");
-  lockNotice.setAttribute("role", "status");
-  lockNotice.setAttribute("aria-live", "polite");
-  editorForm.append(lockNotice);
-  let lockNoticeTimer;
-  function showTrashEditNotice() {
-    clearTimeout(lockNoticeTimer);
-    lockNotice.textContent = "Чтобы внести изменения, восстановите учебную заметку из корзины.";
-    lockNotice.classList.remove("is-visible");
-    void lockNotice.offsetWidth;
-    lockNotice.classList.add("is-visible");
-    lockNoticeTimer = setTimeout(() => lockNotice.classList.remove("is-visible"), 4000);
+  const editorNotice = noteElement("p", "editor-lock-notice");
+  editorNotice.setAttribute("role", "status");
+  editorNotice.setAttribute("aria-live", "polite");
+  editorForm.append(editorNotice);
+  let editorNoticeTimer;
+  function showEditorNotice(text) {
+    clearTimeout(editorNoticeTimer);
+    editorNotice.textContent = text;
+    editorNotice.classList.remove("is-visible");
+    void editorNotice.offsetWidth;
+    editorNotice.classList.add("is-visible");
+    editorNoticeTimer = setTimeout(() => editorNotice.classList.remove("is-visible"), 4000);
   }
+  function showTrashEditNotice() {
+    showEditorNotice("Чтобы внести изменения, восстановите учебную заметку из корзины.");
+  }
+  editorForm.showNotice = showEditorNotice;
   function field(title, type, value) {
     const label = noteElement("label", "editor-field", title);
     const input = noteElement(type === "textarea" ? "textarea" : "input");
@@ -670,8 +684,18 @@ function openNoteEditor(plan, day) {
         showTrashEditNotice();
         return;
       }
+      const nextPreparationDate = dateForWeekday(preparationDate, value);
+      const nextPreparationDay = calendarDay(nextPreparationDate);
+      const selectedExamDay = calendarDay(examDate.value);
+      if (Number.isFinite(selectedExamDay) && nextPreparationDay >= selectedExamDay) {
+        const warning = "День подготовки должен быть раньше даты экзамена. Изменение не сохранено.";
+        error.textContent = warning;
+        showEditorNotice(warning);
+        return;
+      }
       selectedPreparationWeekday = value;
-      preparationDate = dateForWeekday(preparationDate, value);
+      preparationDate = nextPreparationDate;
+      error.textContent = "";
       updateWeekdaySelection();
       updateEditorHeading();
       scheduleSave();
@@ -739,7 +763,9 @@ function openNoteEditor(plan, day) {
       return false;
     }
     if (Number.isFinite(selectedExamDay) && Number.isFinite(selectedPreparationDay) && selectedPreparationDay >= selectedExamDay) {
-      error.textContent = "День подготовки должен быть раньше даты экзамена.";
+      const warning = "День подготовки должен быть раньше даты экзамена. Изменение не сохранено.";
+      error.textContent = warning;
+      showEditorNotice(warning);
       return false;
     }
     Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
