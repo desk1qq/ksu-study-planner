@@ -206,5 +206,3 @@ document.addEventListener("pointerdown", event => {
   }
 });
 
-restore();
-renderPlan();

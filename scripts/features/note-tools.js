@@ -5,7 +5,14 @@ const NOTE_COLORS = [
   ["sand", "Песочный"], ["green", "Зелёный"], ["mint", "Мятный"],
   ["blue", "Голубой"], ["purple", "Сиреневый"], ["pink", "Розовый"], ["gray", "Серый"]
 ];
-const NOTE_PATTERNS = [["none", "Без рисунка"], ["dots", "Точки"], ["lines", "Полосы"], ["grid", "Клетка"], ["waves", "Волны"]];
+const NOTE_PATTERNS = [
+  ["none", "Без рисунка"],
+  ["dots", "Точки"],
+  ["lines", "Полосы"],
+  ["grid", "Клетка"],
+  ["waves", "Волны"]
+];
+const reminderAlert = document.getElementById("reminder-alert");
 let notePanel = null;
 let notePanelTrigger = null;
 
@@ -91,7 +98,7 @@ function applyNoteAppearance(card, day) {
 }
 
 function saveNoteOptions(card) {
-  // В редакторе меняем черновик; запись произойдёт по кнопке «Сохранить».
+  // В редакторе меняем черновик; запись произойдёт при автосохранении или закрытии.
   if (!card.noteDraft) persist();
 }
 
@@ -123,9 +130,14 @@ function buildFormatPanel(panel, card, day) {
       refresh(); saveNoteOptions(card);
     });
     button.dataset.format = key;
-    controls.push([key, button]); row.append(button);
+    controls.push([key, button]);
+    row.append(button);
   }
-  row.append(noteButton("Убрать форматирование", "Tx", () => { day.format = {}; refresh(); saveNoteOptions(card); }));
+  row.append(noteButton("Убрать форматирование", "Tx", () => {
+    day.format = {};
+    refresh();
+    saveNoteOptions(card);
+  }));
   panel.append(row);
   refresh();
 }
@@ -139,14 +151,17 @@ function buildBackgroundPanel(panel, card, day) {
       const button = noteButton(label, "", () => {
         day[property] = key;
         applyNoteAppearance(card, day);
-        for (const [value, control] of controls) control.setAttribute("aria-pressed", String(value === key));
+        for (const [value, control] of controls) {
+          control.setAttribute("aria-pressed", String(value === key));
+        }
         saveNoteOptions(card);
       });
       button.classList.add("swatch");
       button.dataset[property] = key;
       if (key === "default" || key === "none") button.textContent = "∅";
       button.setAttribute("aria-pressed", String((day[property] || options[0][0]) === key));
-      controls.push([key, button]); row.append(button);
+      controls.push([key, button]);
+      row.append(button);
     }
     panel.append(row);
   }
@@ -155,8 +170,14 @@ function buildBackgroundPanel(panel, card, day) {
 function reminderPreset(kind, now = new Date()) {
   const date = new Date(now);
   if (kind === "today") date.setHours(18, 0, 0, 0);
-  if (kind === "tomorrow") { date.setDate(date.getDate() + 1); date.setHours(8, 0, 0, 0); }
-  if (kind === "week") { date.setDate(date.getDate() + ((8 - date.getDay()) % 7 || 7)); date.setHours(8, 0, 0, 0); }
+  if (kind === "tomorrow") {
+    date.setDate(date.getDate() + 1);
+    date.setHours(8, 0, 0, 0);
+  }
+  if (kind === "week") {
+    date.setDate(date.getDate() + ((8 - date.getDay()) % 7 || 7));
+    date.setHours(8, 0, 0, 0);
+  }
   return date;
 }
 
@@ -165,7 +186,8 @@ function buildReminderPanel(panel, card, day) {
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   function save(date) {
     if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
-      error.textContent = "Выберите дату и время в будущем."; return;
+      error.textContent = "Выберите дату и время в будущем.";
+      return;
     }
     day.reminder = date.toISOString();
     saveNoteOptions(card); updateReminderBadge(card, day); checkReminders(); closeNotePanel(true);
@@ -184,7 +206,11 @@ function buildReminderPanel(panel, card, day) {
   const actions = noteElement("div", "reminder-actions");
   actions.append(noteButton("Сохранить напоминание", "Сохранить", () => save(new Date(input.value))));
   if (day.reminder) actions.append(noteButton("Удалить напоминание", "Удалить", () => {
-    delete day.reminder; saveNoteOptions(card); updateReminderBadge(card, day); checkReminders(); closeNotePanel(true);
+    delete day.reminder;
+    saveNoteOptions(card);
+    updateReminderBadge(card, day);
+    checkReminders();
+    closeNotePanel(true);
   }));
   panel.append(actions, error);
 }
@@ -222,24 +248,34 @@ function attachNoteTools(card, day) {
     const button = noteButton(title, "", () => {
       openNotePanel(button, panelTitle, panel => build(panel, card, day));
     });
-    button.setAttribute("aria-haspopup", "dialog"); button.setAttribute("aria-expanded", "false");
-    button.append(noteIcon(icon)); toolbar.append(button);
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-expanded", "false");
+    button.append(noteIcon(icon));
+    toolbar.append(button);
   }
   card.append(toolbar);
-  applyNoteAppearance(card, day); updateReminderBadge(card, day);
+  applyNoteAppearance(card, day);
+  updateReminderBadge(card, day);
 }
 
 function checkReminders() {
   const due = [];
-  for (const plan of savedPlans) for (const day of plan.days) {
-    if (day.state !== "trash" && Date.parse(day.reminder) <= Date.now()) due.push(`${day.name || plan.name}: ${day.tasks.join(", ")}`);
+  for (const plan of savedPlans) {
+    for (const day of plan.days) {
+      if (day.state !== "trash" && Date.parse(day.reminder) <= Date.now()) {
+        due.push(`${day.name || plan.name}: ${day.tasks.join(", ")}`);
+      }
+    }
   }
-  const banner = document.getElementById("reminder-alert");
   const text = due.length ? "Пора заняться подготовкой! " + due.join(" · ") : "";
-  if (banner.textContent !== text) banner.textContent = text;
-  banner.hidden = !due.length;
-  for (const card of planContainer.querySelectorAll(".day")) updateReminderBadge(card, card.noteDay);
+  if (reminderAlert.textContent !== text) reminderAlert.textContent = text;
+  reminderAlert.hidden = !due.length;
+  for (const card of planContainer.querySelectorAll(".day")) {
+    updateReminderBadge(card, card.noteDay);
+  }
 }
 
 setInterval(checkReminders, 30000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) checkReminders(); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) checkReminders();
+});

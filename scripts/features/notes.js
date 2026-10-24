@@ -30,6 +30,11 @@ const noteToast = document.getElementById("note-toast");
 const noteToastMessage = document.getElementById("note-toast-message");
 const noteToastUndo = document.getElementById("note-toast-undo");
 const noteToastClose = document.getElementById("note-toast-close");
+const noteActionStatus = document.getElementById("note-action-status");
+const notesSearch = document.getElementById("search");
+const notesTitle = document.getElementById("notes-title");
+const composerPanel = document.querySelector(".composer");
+const trashNavigationButton = document.querySelector('[data-view="trash"]');
 const TRASH_RETENTION_MS = 7 * DAY_MS;
 const TOAST_DURATION_MS = 4000;
 let pendingConfirmation = null;
@@ -100,8 +105,8 @@ function deleteNotePermanently(plan, day) {
   closeNoteEditor();
   persist();
   renderPlan();
-  document.getElementById("note-action-status").textContent = "Заметка удалена навсегда.";
-  document.querySelector('[data-view="trash"]').focus({ preventScroll: true });
+  noteActionStatus.textContent = "Заметка удалена навсегда.";
+  trashNavigationButton.focus({ preventScroll: true });
 }
 
 function noteState(day) {
@@ -160,24 +165,29 @@ function emptyTrash() {
   savedPlans = savedPlans.filter(plan => plan.days.length);
   persist();
   renderPlan();
-  document.getElementById("note-action-status").textContent = "Корзина очищена.";
-  document.querySelector('[data-view="trash"]').focus({ preventScroll: true });
+  noteActionStatus.textContent = "Корзина очищена.";
+  trashNavigationButton.focus({ preventScroll: true });
 }
 
 emptyTrashButton.addEventListener("click", () => {
   requestConfirmation("Очистить корзину?", emptyTrash);
 });
 
-function noteName(plan, day) { return day.name || plan.name; }
-function noteExamDate(plan, day) { return day.examDate || plan.examDate; }
+function noteName(plan, day) {
+  return day.name || plan.name;
+}
+
+function noteExamDate(plan, day) {
+  return day.examDate || plan.examDate;
+}
 
 function switchNotesView(view) {
   if (!NOTES_VIEWS.has(view)) return;
   currentNotesView = view;
   document.documentElement.dataset.notesView = view;
   persistNotesView(view);
-  document.getElementById("search").value = "";
-  document.getElementById("note-action-status").textContent = "";
+  notesSearch.value = "";
+  noteActionStatus.textContent = "";
   renderPlan();
 }
 
@@ -188,8 +198,8 @@ for (const button of document.querySelectorAll("[data-view]")) {
 function renderNoteCollection() {
   purgeExpiredTrash();
   const titles = { active: "МОЙ ПЛАН", archive: "АРХИВ", trash: "КОРЗИНА" };
-  document.getElementById("notes-title").textContent = titles[currentNotesView];
-  document.querySelector(".composer").hidden = currentNotesView !== "active";
+  notesTitle.textContent = titles[currentNotesView];
+  composerPanel.hidden = currentNotesView !== "active";
   trashControls.hidden = currentNotesView !== "trash";
   for (const button of document.querySelectorAll("[data-view]")) {
     const active = button.dataset.view === currentNotesView;
@@ -211,7 +221,10 @@ function renderNoteCollection() {
     return;
   }
   const groups = currentNotesView === "active"
-    ? [["pinned", "Закреплённые", entries.filter(({ day }) => day.pinned)], ["other", "Другие", entries.filter(({ day }) => !day.pinned)]]
+    ? [
+        ["pinned", "Закреплённые", entries.filter(({ day }) => day.pinned)],
+        ["other", "Другие", entries.filter(({ day }) => !day.pinned)]
+      ]
     : [[currentNotesView, "", entries]];
   for (const [group, label, items] of groups) {
     if (!items.length) continue;
@@ -220,7 +233,9 @@ function renderNoteCollection() {
       heading.dataset.group = group;
       planContainer.append(heading);
     }
-    for (const { plan, day } of items) planContainer.append(createNoteCard(plan, day, group));
+    for (const { plan, day } of items) {
+      planContainer.append(createNoteCard(plan, day, group));
+    }
   }
 }
 
@@ -241,6 +256,22 @@ function iconAction(label, icon, action) {
   const button = noteButton(label, "", action);
   button.append(actionIcon(icon));
   return button;
+}
+
+function taskContainer(day) {
+  const listTag = day.listType === "ordered"
+    ? "ol"
+    : day.listType === "unordered"
+      ? "ul"
+      : "div";
+  const itemTag = day.listType === "plain" || !day.listType ? "p" : "li";
+  const list = noteElement(listTag, "task-content");
+
+  for (const task of day.tasks) {
+    list.append(noteElement(itemTag, "", task));
+  }
+
+  return list;
 }
 
 function createNoteCard(plan, day, group) {
@@ -266,9 +297,7 @@ function createNoteCard(plan, day, group) {
     card.append(noteElement("p", "card-exam", metadata.join(" · ")));
   }
 
-  const list = noteElement(day.listType === "ordered" ? "ol" : day.listType === "unordered" ? "ul" : "div", "task-content");
-  for (const task of day.tasks) list.append(noteElement(day.listType === "plain" || !day.listType ? "p" : "li", "", task));
-  card.append(list);
+  card.append(taskContainer(day));
   if (noteState(day) !== "trash") {
     attachNoteTools(card, day);
     const pin = iconAction(day.pinned ? "Открепить" : "Закрепить", "pin", () => changeNoteState(plan, day, "pin"));
@@ -300,7 +329,8 @@ function createNoteCard(plan, day, group) {
   });
   card.addEventListener("keydown", event => {
     if (event.target === card && (event.key === "Enter" || event.key === " ")) {
-      event.preventDefault(); openNoteEditor(plan, day);
+      event.preventDefault();
+      openNoteEditor(plan, day);
     }
   });
   return card;
@@ -320,10 +350,13 @@ function changeNoteState(plan, day, action) {
     if (day.pinned) day.state = "active";
     status = day.pinned ? "Заметка закреплена." : "Заметка откреплена.";
   } else if (action === "archive") {
-    day.state = "archive"; day.pinned = false; status = "Заметка перемещена в архив.";
+    day.state = "archive";
+    day.pinned = false;
+    status = "Заметка перемещена в архив.";
     canUndo = true;
   } else if (action === "unarchive") {
-    day.state = "active"; status = "Заметка возвращена из архива.";
+    day.state = "active";
+    status = "Заметка возвращена из архива.";
     canUndo = true;
   } else if (action === "trash") {
     day.previousState = "active";
@@ -344,7 +377,8 @@ function changeNoteState(plan, day, action) {
     return false;
   }
   closeNoteEditor();
-  persist(); renderPlan();
+  persist();
+  renderPlan();
   if (canUndo) {
     showNoteToast(status, () => {
       day.state = previous.state;
@@ -357,7 +391,7 @@ function changeNoteState(plan, day, action) {
       renderPlan();
     });
   } else {
-    document.getElementById("note-action-status").textContent = status;
+    noteActionStatus.textContent = status;
   }
   const next = [...planContainer.querySelectorAll(".day")].find(card => card.dataset.noteId === day.id);
   (next || document.querySelector(`[data-view="${currentNotesView}"]`)).focus({ preventScroll: true });
@@ -367,11 +401,14 @@ function changeNoteState(plan, day, action) {
 function closeNoteEditor() {
   if (!noteEditor) return;
   closeNotePanel();
-  noteEditor.close(); noteEditor.remove(); noteEditor = null;
+  noteEditor.close();
+  noteEditor.remove();
+  noteEditor = null;
 }
 
 function openNoteEditor(plan, day) {
-  closeNotePanel(); closeNoteEditor();
+  closeNotePanel();
+  closeNoteEditor();
   const draft = JSON.parse(JSON.stringify(day));
   const dialog = noteElement("dialog", "note-editor");
   noteEditor = dialog;
@@ -385,10 +422,14 @@ function openNoteEditor(plan, day) {
     const label = noteElement("label", "editor-field", title);
     const input = noteElement(type === "textarea" ? "textarea" : "input");
     if (type !== "textarea") input.type = type;
-    else { input.rows = 12; input.className = "note-text"; }
+    else {
+      input.rows = 12;
+      input.className = "note-text";
+    }
     input.value = value;
     input.readOnly = noteState(day) === "trash";
-    label.append(input); editorForm.append(label);
+    label.append(input);
+    editorForm.append(label);
     return input;
   }
   const name = field("Предмет (необязательно)", "text", noteName(plan, day));
@@ -406,13 +447,19 @@ function openNoteEditor(plan, day) {
   function commit(action) {
     clearTimeout(saveTimer);
     const parsed = parseTaskInput(tasks.value);
-    if (!parsed.tasks.length) { error.textContent = "Введите текст заметки."; return false; }
+    if (!parsed.tasks.length) {
+      error.textContent = "Введите текст заметки.";
+      return false;
+    }
     Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
     if (!draft.reminder) delete day.reminder;
-    if (action) { changeNoteState(plan, day, action); return true; }
+    if (action) {
+      changeNoteState(plan, day, action);
+      return true;
+    }
     error.textContent = "";
     persist();
-    document.getElementById("note-action-status").textContent = "Изменения сохранены автоматически.";
+    noteActionStatus.textContent = "Изменения сохранены автоматически.";
     return true;
   }
   let saveTimer;
@@ -442,10 +489,13 @@ function openNoteEditor(plan, day) {
     renderPlan();
   }
   actions.append(noteButton("Закрыть", "Закрыть", closeEditor));
-  editorForm.append(actions); dialog.append(editorForm); document.body.append(dialog);
+  editorForm.append(actions);
+  dialog.append(editorForm);
+  document.body.append(dialog);
   dialog.addEventListener("cancel", event => {
     event.preventDefault();
     closeEditor();
   });
-  dialog.showModal(); name.focus();
+  dialog.showModal();
+  name.focus();
 }

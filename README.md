@@ -5,8 +5,8 @@
 ### Учебные заметки и план подготовки к экзаменам
 
 [![HTML](https://img.shields.io/badge/HTML5-interface-E34F26?logo=html5&logoColor=white)](keep.html)
-[![CSS](https://img.shields.io/badge/CSS3-adaptive-1572B6?logo=css3&logoColor=white)](keep.css)
-[![JavaScript](https://img.shields.io/badge/JavaScript-vanilla-F7DF1E?logo=javascript&logoColor=111)](script.js)
+[![CSS](https://img.shields.io/badge/CSS3-adaptive-1572B6?logo=css3&logoColor=white)](styles/app.css)
+[![JavaScript](https://img.shields.io/badge/JavaScript-vanilla-F7DF1E?logo=javascript&logoColor=111)](scripts/app.js)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-2ea44f)](#запуск)
 
 Распределяет учебные задачи по дням, хранит заметки локально и помогает организовать подготовку без сервера и регистрации.
@@ -70,18 +70,29 @@ Start-Process .\keep.html
 
 ## Структура
 
+Подробное описание порядка загрузки и потока данных находится в [документе об архитектуре](docs/ARCHITECTURE.md).
+
 ```text
 ksu-study-planner/
-├── keep.html          # интерфейс
-├── keep.css           # темы, сетка и анимации
-├── keep.js            # поиск, тема и боковое меню
-├── planner-core.js    # даты, списки и распределение задач
-├── script.js          # состояние формы и создание заметок
-├── notes.js           # редактор, архив и корзина
-├── note-tools.js      # оформление и напоминания
-├── note-tools.css     # редактор и всплывающие панели
-├── profile.js         # локальное имя и аватар
-└── docs/preview.png   # скриншот проекта
+├── keep.html                    # точка входа
+├── assets/
+│   └── favicon.svg              # иконка вкладки
+├── styles/
+│   ├── app.css                  # темы, сетка и анимации
+│   └── note-tools.css           # редактор и всплывающие панели
+├── scripts/
+│   ├── app.js                   # состояние формы и создание заметок
+│   ├── bootstrap.js             # восстановление данных и первый запуск
+│   ├── ui.js                    # поиск, тема и боковое меню
+│   ├── core/
+│   │   └── planner.js           # даты, списки и распределение задач
+│   └── features/
+│       ├── notes.js             # редактор, архив и корзина
+│       ├── note-tools.js        # оформление и напоминания
+│       └── profile.js           # локальное имя и аватар
+└── docs/
+    ├── ARCHITECTURE.md          # устройство и поток данных
+    └── preview.png              # скриншот проекта
 ```
 
 ## Алгоритм распределения

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Учебные заметки — План подготовки</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="shortcut icon" href="./favicon.svg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="shortcut icon" href="assets/favicon.svg">
   <script>
     try {
       document.documentElement.dataset.theme = localStorage.getItem("exam-planner-theme") === "dark" ? "dark" : "light";
@@ -22,14 +22,15 @@
       document.documentElement.dataset.sidebarState = "expanded";
     }
   </script>
-  <link rel="stylesheet" href="keep.css">
-  <link rel="stylesheet" href="note-tools.css">
-  <script src="planner-core.js" defer></script>
-  <script src="note-tools.js" defer></script>
-  <script src="notes.js" defer></script>
-  <script src="script.js" defer></script>
-  <script src="keep.js" defer></script>
-  <script src="profile.js" defer></script>
+  <link rel="stylesheet" href="styles/app.css">
+  <link rel="stylesheet" href="styles/note-tools.css">
+  <script src="scripts/core/planner.js" defer></script>
+  <script src="scripts/app.js" defer></script>
+  <script src="scripts/features/note-tools.js" defer></script>
+  <script src="scripts/features/notes.js" defer></script>
+  <script src="scripts/ui.js" defer></script>
+  <script src="scripts/features/profile.js" defer></script>
+  <script src="scripts/bootstrap.js" defer></script>
 </head>
 <body>
   <svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

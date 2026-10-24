@@ -1,10 +1,36 @@
 :root {
+  color-scheme: light;
+  --page: #fff;
+  --surface: #fff;
+  --text: #202124;
+  --muted: #5f6368;
+  --border: #dadce0;
+  --hover: #f1f3f4;
+  --accent: #feefc3;
+  --accent-hover: #fee7a0;
+  --focus: #986400;
+  --success: #386b58;
+  --error: #b3261e;
   font-family: "Segoe UI", Arial, sans-serif;
   color: var(--text);
   background: var(--page);
   font-size: 14px;
   line-height: 1.5;
   min-height: 100%;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #202124;
+  --surface: #28292c;
+  --text: #e8eaed;
+  --muted: #bdc1c6;
+  --border: #5f6368;
+  --hover: #35363a;
+  --accent: #51452a;
+  --accent-hover: #665637;
+  --focus: #f6ce72;
+  --success: #a8dab5;
+  --error: #f2b8b5;
 }
 * {
   box-sizing: border-box;
@@ -625,35 +651,6 @@ body.sidebar-peek .nav-item span {
   .avatar {
     display: none;
   }
-}
-/* Общая палитра интерфейса и обе темы. */
-:root {
-  color-scheme: light;
-  --page: #fff;
-  --surface: #fff;
-  --text: #202124;
-  --muted: #5f6368;
-  --border: #dadce0;
-  --hover: #f1f3f4;
-  --accent: #feefc3;
-  --accent-hover: #fee7a0;
-  --focus: #986400;
-  --success: #386b58;
-  --error: #b3261e;
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #202124;
-  --surface: #28292c;
-  --text: #e8eaed;
-  --muted: #bdc1c6;
-  --border: #5f6368;
-  --hover: #35363a;
-  --accent: #51452a;
-  --accent-hover: #665637;
-  --focus: #f6ce72;
-  --success: #a8dab5;
-  --error: #f2b8b5;
 }
 html, body {
   background: var(--page);
