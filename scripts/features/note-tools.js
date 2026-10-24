@@ -116,9 +116,11 @@ function saveNoteOptions(card) {
   if (!card.noteDraft) persist();
 }
 
-function showToolFeedback(card, text) {
-  if (typeof card.showNotice === "function") card.showNotice(text);
-  else if (typeof showNoteToast === "function") showNoteToast(text);
+function showToolFeedback(card, text, action, actionLabel = "") {
+  if (typeof card.showNotice === "function") card.showNotice(text, action, actionLabel);
+  else if (typeof showNoteToast === "function") {
+    showNoteToast(text, action, actionLabel || "Отменить", typeof action === "function");
+  }
 }
 
 function buildFormatPanel(panel, card, day) {
@@ -203,6 +205,13 @@ function reminderPreset(kind, now = new Date()) {
 function buildReminderPanel(panel, card, day) {
   panel.append(noteElement("p", "note-help", "Напоминания сохраняются в приложении."));
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
+  function removeReminder(showFeedback = true) {
+    delete day.reminder;
+    saveNoteOptions(card);
+    updateReminderBadge(card, day);
+    checkReminders();
+    if (showFeedback) showToolFeedback(card, "Напоминание удалено.");
+  }
   function save(date) {
     if (!Number.isFinite(date.getTime()) || date.getTime() <= Date.now()) {
       error.textContent = "Выберите дату и время в будущем.";
@@ -216,7 +225,12 @@ function buildReminderPanel(panel, card, day) {
     const formattedDate = new Intl.DateTimeFormat("ru-RU", {
       day: "numeric", month: "long", hour: "2-digit", minute: "2-digit"
     }).format(date);
-    showToolFeedback(card, `Напоминание сохранено: ${formattedDate}.`);
+    showToolFeedback(
+      card,
+      `Напоминание сохранено: ${formattedDate}.`,
+      () => removeReminder(),
+      "Удалить"
+    );
   }
   for (const [kind, label, time] of [["tomorrow", "Завтра", "08:00"], ["week", "На следующей неделе", "пн, 08:00"]]) {
     const date = reminderPreset(kind);
@@ -232,10 +246,7 @@ function buildReminderPanel(panel, card, day) {
   const actions = noteElement("div", "reminder-actions");
   actions.append(noteButton("Сохранить напоминание", "Сохранить", () => save(new Date(input.value))));
   if (day.reminder) actions.append(noteButton("Удалить напоминание", "Удалить", () => {
-    delete day.reminder;
-    saveNoteOptions(card);
-    updateReminderBadge(card, day);
-    checkReminders();
+    removeReminder(false);
     closeNotePanel(true);
     showToolFeedback(card, "Напоминание удалено.");
   }));
