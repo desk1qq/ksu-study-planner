@@ -9,7 +9,14 @@
   <script>
     try {
       document.documentElement.dataset.theme = localStorage.getItem("exam-planner-theme") === "dark" ? "dark" : "light";
-    } catch { document.documentElement.dataset.theme = "light"; }
+      const savedView = localStorage.getItem("exam-planner-current-view");
+      document.documentElement.dataset.notesView = ["active", "archive", "trash"].includes(savedView)
+        ? savedView
+        : "active";
+    } catch {
+      document.documentElement.dataset.theme = "light";
+      document.documentElement.dataset.notesView = "active";
+    }
   </script>
   <link rel="stylesheet" href="keep.css">
   <link rel="stylesheet" href="note-tools.css">

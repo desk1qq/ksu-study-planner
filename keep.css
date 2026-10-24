@@ -234,6 +234,9 @@ main {
   min-width: 0;
   padding: 32px 36px;
 }
+html:not(.notes-ready) .workspace {
+  visibility: hidden;
+}
 .composer {
   max-width: 600px;
   margin: 0 auto 44px;
