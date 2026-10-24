@@ -321,7 +321,7 @@
 .note-toast {
   position: fixed;
   z-index: 1000;
-  left: 24px;
+  left: 50%;
   bottom: 24px;
   display: grid;
   grid-template-columns: minmax(180px, 1fr) auto auto;
@@ -336,13 +336,13 @@
   background: #303134;
   box-shadow: 0 4px 12px #0005;
   opacity: 0;
-  transform: translateY(18px);
+  transform: translate(-50%, 18px);
   transition: opacity .18s ease, transform .18s ease;
 }
 
 .note-toast.is-visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
 }
 
 .note-toast-undo,
@@ -375,7 +375,7 @@
 
 @media (max-width: 560px) {
   .note-toast {
-    left: 12px;
+    left: 50%;
     bottom: 12px;
     width: calc(100vw - 24px);
     grid-template-columns: minmax(0, 1fr) auto auto;
