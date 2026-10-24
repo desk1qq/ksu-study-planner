@@ -61,9 +61,9 @@ viewToggle.addEventListener("click", () => {
 });
 
 menuToggle.addEventListener("click", () => {
-  const hidden = document.body.classList.toggle("sidebar-hidden");
-  menuToggle.setAttribute("aria-expanded", String(!hidden));
-  menuToggle.setAttribute("aria-label", hidden ? "Показать боковую панель" : "Скрыть боковую панель");
+  const collapsed = document.body.classList.toggle("sidebar-hidden");
+  menuToggle.setAttribute("aria-expanded", String(!collapsed));
+  menuToggle.setAttribute("aria-label", collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель");
 });
 
 filterNotes();
