@@ -216,6 +216,20 @@ function noteWeekday(plan, day) {
   return plan.weekdays.map(weekdayName).filter(Boolean).join(", ");
 }
 
+function dateForWeekday(currentDate, targetWeekday) {
+  const currentDay = calendarDay(currentDate);
+  if (Number.isFinite(currentDay)) {
+    const currentWeekday = new Date(currentDay * DAY_MS).getUTCDay();
+    const monday = currentDay - ((currentWeekday + 6) % 7);
+    return dateString(monday + ((targetWeekday + 6) % 7));
+  }
+
+  const startDay = todayDay();
+  const startWeekday = new Date(startDay * DAY_MS).getUTCDay();
+  const daysAhead = (targetWeekday - startWeekday + 7) % 7;
+  return dateString(startDay + daysAhead);
+}
+
 function switchNotesView(view) {
   if (!NOTES_VIEWS.has(view)) return;
   currentNotesView = view;
@@ -473,12 +487,46 @@ function openNoteEditor(plan, day) {
   }
   const name = field("Предмет (необязательно)", "text", noteName(plan, day));
   const examDate = field("Дата экзамена (необязательно)", "date", noteExamDate(plan, day));
-  const preparationDate = field("День подготовки (необязательно)", "date", day.date || "");
+  let preparationDate = day.date || "";
+  const weekdayField = noteElement("div", "editor-weekday-field");
+  weekdayField.append(noteElement("span", "editor-weekday-label", "День подготовки (необязательно)"));
+  const weekdayOptions = noteElement("div", "editor-weekday-options");
+  weekdayOptions.setAttribute("role", "group");
+  weekdayOptions.setAttribute("aria-label", "День подготовки");
+  const weekdayButtons = [
+    [1, "Пн"], [2, "Вт"], [3, "Ср"], [4, "Чт"], [5, "Пт"], [6, "Сб"], [0, "Вс"]
+  ].map(([value, label]) => {
+    const button = noteButton(label, label, () => {
+      preparationDate = dateForWeekday(preparationDate, value);
+      updateWeekdaySelection();
+      updateEditorHeading();
+      scheduleSave();
+    });
+    button.classList.add("editor-weekday-option");
+    button.dataset.weekday = String(value);
+    button.disabled = noteState(day) === "trash";
+    weekdayOptions.append(button);
+    return button;
+  });
+  weekdayField.append(weekdayOptions);
+  editorForm.append(weekdayField);
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
+  function updateWeekdaySelection() {
+    const selectedDay = calendarDay(preparationDate);
+    const selectedWeekday = Number.isFinite(selectedDay)
+      ? new Date(selectedDay * DAY_MS).getUTCDay()
+      : -1;
+    for (const button of weekdayButtons) {
+      const selected = Number(button.dataset.weekday) === selectedWeekday;
+      button.classList.toggle("selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    }
+  }
   function updateEditorHeading() {
-    const countdown = examCountdown(examDate.value, preparationDate.value);
+    const countdown = examCountdown(examDate.value, preparationDate);
     heading.textContent = countdown ? `${headingPrefix} ▪ ${countdown}` : headingPrefix;
   }
+  updateWeekdaySelection();
   updateEditorHeading();
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   editorForm.append(error);
@@ -503,20 +551,18 @@ function openNoteEditor(plan, day) {
       examDate.focus();
       return false;
     }
-    const selectedPreparationDay = calendarDay(preparationDate.value);
-    if (preparationDate.value && !Number.isFinite(selectedPreparationDay)) {
+    const selectedPreparationDay = calendarDay(preparationDate);
+    if (preparationDate && !Number.isFinite(selectedPreparationDay)) {
       error.textContent = "Укажите корректный день подготовки или оставьте поле пустым.";
-      preparationDate.focus();
       return false;
     }
     if (Number.isFinite(selectedExamDay) && Number.isFinite(selectedPreparationDay) && selectedPreparationDay >= selectedExamDay) {
       error.textContent = "День подготовки должен быть раньше даты экзамена.";
-      preparationDate.focus();
       return false;
     }
     Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
-    if (preparationDate.value) {
-      day.date = preparationDate.value;
+    if (preparationDate) {
+      day.date = preparationDate;
       delete day.quickNote;
     } else {
       delete day.date;
@@ -542,10 +588,6 @@ function openNoteEditor(plan, day) {
   if (noteState(day) !== "trash") {
     name.addEventListener("input", scheduleSave);
     examDate.addEventListener("input", () => {
-      updateEditorHeading();
-      scheduleSave();
-    });
-    preparationDate.addEventListener("input", () => {
       updateEditorHeading();
       scheduleSave();
     });

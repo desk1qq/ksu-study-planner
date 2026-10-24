@@ -459,6 +459,47 @@
   border-color: var(--focus);
   box-shadow: inset 0 0 0 1px var(--focus);
 }
+
+.editor-weekday-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.editor-weekday-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.editor-weekday-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editor-weekday-option.note-button {
+  min-width: 38px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+}
+
+.editor-weekday-option.note-button:hover {
+  background: var(--accent);
+}
+
+.editor-weekday-option.note-button.selected {
+  border-color: var(--focus);
+  background: var(--accent);
+  color: var(--text);
+}
+
+.editor-weekday-option.note-button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 .editor-field textarea.note-text {
   flex: 1;
   min-height: 180px;
