@@ -132,11 +132,11 @@ function changeNoteState(plan, day, action) {
   } else if (action === "unarchive") {
     day.state = "active"; status = "Заметка возвращена из архива.";
   } else if (action === "trash") {
-    day.previousState = noteState(day); day.state = "trash"; status = "Заметка перемещена в корзину.";
+    day.previousState = "active"; day.state = "trash"; day.pinned = false; status = "Заметка перемещена в корзину.";
   } else if (action === "restore") {
-    day.state = day.previousState === "archive" ? "archive" : "active";
+    day.state = "active";
     delete day.previousState;
-    status = day.state === "archive" ? "Заметка восстановлена в архив." : "Заметка восстановлена в плане.";
+    status = "Заметка восстановлена в плане подготовки.";
   } else if (action === "delete") {
     if (noteState(day) !== "trash" || !window.confirm("Удалить эту заметку навсегда? Восстановить её будет нельзя.")) return false;
     plan.days = plan.days.filter(item => item !== day);
