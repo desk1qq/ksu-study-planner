@@ -261,11 +261,11 @@ main {
   cursor: text;
 }
 #planner-form {
-  max-height: 760px;
+  max-height: var(--composer-form-height, 420px);
   opacity: 1;
   transform: translateY(0);
   visibility: visible;
-  transition: max-height .3s cubic-bezier(.2, .8, .2, 1), opacity .2s ease, transform .25s ease, visibility 0s;
+  transition: max-height .38s cubic-bezier(.22, 1, .36, 1), opacity .24s ease .06s, transform .34s cubic-bezier(.22, 1, .36, 1), visibility 0s;
 }
 .composer.is-collapsed #planner-form {
   max-height: 0;
@@ -273,7 +273,7 @@ main {
   transform: translateY(-8px);
   visibility: hidden;
   pointer-events: none;
-  transition: max-height .26s cubic-bezier(.4, 0, 1, 1), opacity .15s ease, transform .2s ease, visibility 0s linear .26s;
+  transition: max-height .32s cubic-bezier(.4, 0, .2, 1), opacity .18s ease, transform .26s ease, visibility 0s linear .32s;
 }
 .composer:not(.is-collapsed) #composer-toggle {
   margin-bottom: 18px;
