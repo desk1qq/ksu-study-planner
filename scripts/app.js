@@ -24,7 +24,7 @@ function selectedWeekdays() {
 }
 
 function restoreWeekdays(weekdays) {
-  const selected = Array.isArray(weekdays) ? new Set(weekdays) : new Set([0, 1, 2, 3, 4, 5, 6]);
+  const selected = new Set(Array.isArray(weekdays) ? weekdays : []);
   weekdayInputs.forEach(input => {
     input.checked = selected.has(Number(input.value));
   });

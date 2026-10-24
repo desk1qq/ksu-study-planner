@@ -181,6 +181,12 @@ function noteExamDate(plan, day) {
   return day.examDate || plan.examDate;
 }
 
+function formatStudyWeekdays(weekdays) {
+  if (!Array.isArray(weekdays) || !weekdays.length) return "";
+  const labels = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+  return weekdays.map(day => labels[day]).filter(Boolean).join(", ");
+}
+
 function switchNotesView(view) {
   if (!NOTES_VIEWS.has(view)) return;
   currentNotesView = view;
@@ -293,6 +299,8 @@ function createNoteCard(plan, day, group) {
   const metadata = [];
   if (name) metadata.push(name);
   if (hasExamDate) metadata.push(`Экзамен: ${formatDate(examDate)}`);
+  const studyWeekdays = formatStudyWeekdays(plan.weekdays);
+  if (studyWeekdays) metadata.push(`Дни: ${studyWeekdays}`);
   if (metadata.length) {
     card.append(noteElement("p", "card-exam", metadata.join(" · ")));
   }
