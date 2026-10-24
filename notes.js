@@ -183,7 +183,6 @@ function renderNoteCollection() {
     if (active) button.setAttribute("aria-current", "page");
     else button.removeAttribute("aria-current");
   }
-  document.documentElement.classList.add("notes-ready");
   const entries = noteEntries().filter(({ day }) => noteState(day) === currentNotesView);
   summary.textContent = currentNotesView === "trash"
     ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда. Автоматического удаления нет.`

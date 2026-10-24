@@ -51,6 +51,7 @@ function renderPlan() {
   planContainer.replaceChildren();
   renderNoteCollection();
   checkReminders();
+  document.documentElement.classList.add("notes-ready");
 }
 
 function formatDate(value) {
@@ -149,7 +150,6 @@ function restore() {
       form.reset();
     }
 
-    renderPlan();
   } catch {
     storageMessage.textContent = "Не удалось прочитать сохранённые данные.";
   }
