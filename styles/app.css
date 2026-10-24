@@ -259,6 +259,17 @@ button.nav-item {
   font-size: 12px;
   color: var(--muted);
 }
+.card-weekday {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border: 1px solid var(--focus);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
 .card-exam-date {
   margin: -10px 0 16px;
   color: var(--muted);

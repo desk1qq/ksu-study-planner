@@ -108,15 +108,15 @@
           <fieldset class="weekday-picker">
             <legend>Выберите день подготовки к экзамену</legend>
             <div class="weekday-options" aria-describedby="weekday-hint">
-              <label><input type="checkbox" name="study-weekday" value="1"><span>Пн</span></label>
-              <label><input type="checkbox" name="study-weekday" value="2"><span>Вт</span></label>
-              <label><input type="checkbox" name="study-weekday" value="3"><span>Ср</span></label>
-              <label><input type="checkbox" name="study-weekday" value="4"><span>Чт</span></label>
-              <label><input type="checkbox" name="study-weekday" value="5"><span>Пт</span></label>
-              <label><input type="checkbox" name="study-weekday" value="6"><span>Сб</span></label>
-              <label><input type="checkbox" name="study-weekday" value="0"><span>Вс</span></label>
+              <label><input type="radio" name="study-weekday" value="1"><span>Пн</span></label>
+              <label><input type="radio" name="study-weekday" value="2"><span>Вт</span></label>
+              <label><input type="radio" name="study-weekday" value="3"><span>Ср</span></label>
+              <label><input type="radio" name="study-weekday" value="4"><span>Чт</span></label>
+              <label><input type="radio" name="study-weekday" value="5"><span>Пт</span></label>
+              <label><input type="radio" name="study-weekday" value="6"><span>Сб</span></label>
+              <label><input type="radio" name="study-weekday" value="0"><span>Вс</span></label>
             </div>
-            <small id="weekday-hint">Задачи попадут только на выбранные дни до экзамена.</small>
+            <small id="weekday-hint">Задачи попадут на выбранный день недели до экзамена.</small>
           </fieldset>
           <label for="tasks">Что нужно изучить?</label>
           <textarea id="tasks" rows="3" placeholder="Текст заметки..." required></textarea>

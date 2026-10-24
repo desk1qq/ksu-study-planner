@@ -25,9 +25,9 @@ function selectedWeekdays() {
 }
 
 function restoreWeekdays(weekdays) {
-  const selected = new Set(Array.isArray(weekdays) ? weekdays : []);
+  const selected = Array.isArray(weekdays) ? weekdays[0] : undefined;
   weekdayInputs.forEach(input => {
-    input.checked = selected.has(Number(input.value));
+    input.checked = Number(input.value) === selected;
   });
 }
 
@@ -103,9 +103,9 @@ function createNote({ strictDate = false } = {}) {
   }
 
   const hasSchedule = Number.isFinite(endDay) && endDay > startDay;
-  if (hasSchedule && !weekdays.length) {
+  if (!weekdays.length) {
     message.className = "error";
-    message.textContent = "Выберите хотя бы один день недели для подготовки.";
+    message.textContent = "Выберите день недели для подготовки.";
     weekdayInputs[0].focus();
     return false;
   }

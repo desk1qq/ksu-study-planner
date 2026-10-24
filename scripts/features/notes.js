@@ -448,9 +448,13 @@ function createNoteCard(plan, day, group) {
     card.append(noteElement("h3", "", formatDate(day.date)));
   }
 
-  const titleParts = [name, noteWeekday(plan, day)].filter(Boolean);
-  if (titleParts.length) {
-    card.append(noteElement("p", "card-exam", titleParts.join(" ▪ ")));
+  const weekday = noteWeekday(plan, day);
+  if (name || weekday) {
+    const cardTitle = noteElement("p", "card-exam");
+    if (name) cardTitle.append(document.createTextNode(name));
+    if (name && weekday) cardTitle.append(document.createTextNode(" ▪ "));
+    if (weekday) cardTitle.append(noteElement("span", "card-weekday", weekday));
+    card.append(cardTitle);
   }
   if (hasExamDate) {
     const countdown = noteElement("p", "card-exam-date", examCountdown(examDate, day.date));
