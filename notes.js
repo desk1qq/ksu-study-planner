@@ -36,6 +36,7 @@ let pendingConfirmation = null;
 let toastTimer = null;
 let toastHideTimer = null;
 let toastUndoAction = null;
+let trashPurgeTimer = null;
 
 function hideNoteToast() {
   clearTimeout(toastTimer);
@@ -136,6 +137,19 @@ function purgeExpiredTrash(now = Date.now()) {
 
   savedPlans = savedPlans.filter(plan => plan.days.length);
   if (changed) persist();
+  scheduleNextTrashPurge(now);
+}
+
+function scheduleNextTrashPurge(now = Date.now()) {
+  clearTimeout(trashPurgeTimer);
+  const expirationTimes = savedPlans.flatMap(plan => plan.days
+    .filter(day => noteState(day) === "trash")
+    .map(day => Date.parse(day.trashedAt) + TRASH_RETENTION_MS)
+    .filter(Number.isFinite));
+
+  if (!expirationTimes.length) return;
+  const delay = Math.max(0, Math.min(...expirationTimes) - now);
+  trashPurgeTimer = setTimeout(() => renderPlan(), delay + 50);
 }
 
 function emptyTrash() {
@@ -185,7 +199,7 @@ function renderNoteCollection() {
   }
   const entries = noteEntries().filter(({ day }) => noteState(day) === currentNotesView);
   summary.textContent = currentNotesView === "trash"
-    ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда. Автоматического удаления нет.`
+    ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда.`
     : `Заметок: ${entries.length}. Нажмите на карточку, чтобы открыть её.`;
   if (!entries.length) {
     const emptyText = currentNotesView === "archive"
