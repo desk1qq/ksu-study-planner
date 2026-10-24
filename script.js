@@ -14,12 +14,15 @@ const composer = document.querySelector(".composer");
 const composerToggle = document.getElementById("composer-toggle");
 
 let savedPlans = [];
+let composerHoverPreview = false;
+let composerCloseTimer = null;
 
-function setComposerExpanded(expanded) {
+function setComposerExpanded(expanded, { focus = expanded } = {}) {
+  clearTimeout(composerCloseTimer);
   composer.classList.toggle("is-collapsed", !expanded);
   composerToggle.setAttribute("aria-expanded", String(expanded));
 
-  if (expanded) {
+  if (expanded && focus) {
     nameInput.focus({ preventScroll: true });
   }
 }
@@ -147,7 +150,35 @@ function restore() {
   }
 }
 
-composerToggle.addEventListener("click", () => setComposerExpanded(true));
+composer.addEventListener("pointerenter", event => {
+  if (event.pointerType && event.pointerType !== "mouse") return;
+  clearTimeout(composerCloseTimer);
+  if (!composer.classList.contains("is-collapsed")) return;
+
+  composerHoverPreview = true;
+  setComposerExpanded(true, { focus: false });
+});
+
+composer.addEventListener("pointerleave", event => {
+  if (event.pointerType && event.pointerType !== "mouse") return;
+  if (!composerHoverPreview) return;
+
+  composerCloseTimer = setTimeout(() => {
+    if (!composerHoverPreview || composer.matches(":hover")) return;
+    composerHoverPreview = false;
+    setComposerExpanded(false, { focus: false });
+  }, 160);
+});
+
+composer.addEventListener("pointerdown", () => {
+  composerHoverPreview = false;
+  clearTimeout(composerCloseTimer);
+});
+
+composerToggle.addEventListener("click", () => {
+  composerHoverPreview = false;
+  setComposerExpanded(true);
+});
 tasksInput.addEventListener("keydown", continueTaskList);
 
 form.addEventListener("input", () => {

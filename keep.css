@@ -241,6 +241,8 @@ main {
   border: 1px solid #dadce0;
   border-radius: 9px;
   box-shadow: 0 2px 6px #0002;
+  overflow: hidden;
+  transition: padding .24s ease, background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 #composer-toggle {
   display: block;
@@ -258,8 +260,20 @@ main {
   padding: 18px 20px;
   cursor: text;
 }
+#planner-form {
+  max-height: 760px;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  transition: max-height .3s cubic-bezier(.2, .8, .2, 1), opacity .2s ease, transform .25s ease, visibility 0s;
+}
 .composer.is-collapsed #planner-form {
-  display: none;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: max-height .26s cubic-bezier(.4, 0, 1, 1), opacity .15s ease, transform .2s ease, visibility 0s linear .26s;
 }
 .composer:not(.is-collapsed) #composer-toggle {
   margin-bottom: 18px;
@@ -645,7 +659,7 @@ input::placeholder, textarea::placeholder {
   display: none;
 }
 /* Движение не меняет размеры полей и не мешает вводу. */
-html, body, .topbar, .composer, .search, .nav-item, .primary-button, .icon-button, .day, input, textarea {
+html, body, .topbar, .search, .nav-item, .primary-button, .icon-button, .day, input, textarea {
   transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 .composer {
