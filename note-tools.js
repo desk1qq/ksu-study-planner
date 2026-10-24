@@ -99,7 +99,14 @@ function buildFormatPanel(panel, card, day) {
   panel.append(noteElement("p", "note-help", "Формат применяется ко всем задачам этой карточки."));
   const row = noteElement("div", "format-options");
   const controls = [];
-  const options = [["h1", "Крупный текст", "H1"], ["h2", "Средний текст", "H2"], ["normal", "Обычный текст", "Aa"], ["bold", "Жирный", "B"], ["italic", "Курсив", "I"], ["underline", "Подчёркнутый", "U"]];
+  const options = [
+    ["h1", "Крупный текст", "H1"],
+    ["h2", "Средний текст", "H2"],
+    ["normal", "Обычный текст", "Aa"],
+    ["bold", "Жирный", "B"],
+    ["italic", "Курсив", "I"],
+    ["underline", "Подчёркнутый", "U"]
+  ];
   function refresh() {
     const format = day.format || {};
     for (const [key, button] of controls) {
@@ -200,9 +207,21 @@ function attachNoteTools(card, day) {
   const badge = noteElement("button", "note-reminder"); badge.type = "button";
   badge.addEventListener("click", () => openNotePanel(badge, "Напомнить позже", panel => buildReminderPanel(panel, card, day)));
   card.append(badge);
-  const toolbar = noteElement("div", "note-toolbar"); toolbar.setAttribute("role", "group"); toolbar.setAttribute("aria-label", "Параметры карточки");
-  for (const [icon, title, build] of [["format", "Параметры форматирования", buildFormatPanel], ["palette", "Параметры фона", buildBackgroundPanel], ["bell", "Напомнить", buildReminderPanel]]) {
-    const button = noteButton(title, "", () => openNotePanel(button, title === "Напомнить" ? "Напомнить позже" : title, panel => build(panel, card, day)));
+  const toolbar = noteElement("div", "note-toolbar");
+  toolbar.setAttribute("role", "group");
+  toolbar.setAttribute("aria-label", "Параметры карточки");
+
+  const tools = [
+    ["format", "Параметры форматирования", buildFormatPanel],
+    ["palette", "Параметры фона", buildBackgroundPanel],
+    ["bell", "Напомнить", buildReminderPanel]
+  ];
+
+  for (const [icon, title, build] of tools) {
+    const panelTitle = title === "Напомнить" ? "Напомнить позже" : title;
+    const button = noteButton(title, "", () => {
+      openNotePanel(button, panelTitle, panel => build(panel, card, day));
+    });
     button.setAttribute("aria-haspopup", "dialog"); button.setAttribute("aria-expanded", "false");
     button.append(noteIcon(icon)); toolbar.append(button);
   }

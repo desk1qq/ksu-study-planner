@@ -43,7 +43,12 @@ function renderNoteCollection() {
     ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда. Автоматического удаления нет.`
     : `Заметок: ${entries.length}. Нажмите на карточку, чтобы открыть её.`;
   if (!entries.length) {
-    planContainer.append(noteElement("p", "empty", currentNotesView === "archive" ? "В архиве пока пусто." : currentNotesView === "trash" ? "Корзина пуста." : "Здесь появятся ваши заметки. Создайте план подготовки."));
+    const emptyText = currentNotesView === "archive"
+      ? "В архиве пока пусто."
+      : currentNotesView === "trash"
+        ? "Корзина пуста."
+        : "Здесь появятся ваши заметки. Создайте план подготовки.";
+    planContainer.append(noteElement("p", "empty", emptyText));
     return;
   }
   const groups = currentNotesView === "active"
@@ -81,12 +86,27 @@ function iconAction(label, icon, action) {
 
 function createNoteCard(plan, day, group) {
   const card = noteElement("article", "day");
+  const name = noteName(plan, day);
+  const examDate = noteExamDate(plan, day);
+  const hasDate = Number.isFinite(calendarDay(day.date));
+  const hasExamDate = Number.isFinite(calendarDay(examDate));
+
   card.dataset.group = group;
   card.dataset.noteId = day.id;
   card.tabIndex = 0;
-  card.setAttribute("aria-label", `${noteName(plan, day)}, ${formatDate(day.date)}. Открыть заметку.`);
-  card.append(noteElement("h3", "", formatDate(day.date)));
-  card.append(noteElement("p", "card-exam", `${noteName(plan, day)} · Экзамен: ${formatDate(noteExamDate(plan, day))}`));
+  card.setAttribute("aria-label", `${name || "Заметка"}. Открыть.`);
+
+  if (hasDate && !day.quickNote) {
+    card.append(noteElement("h3", "", formatDate(day.date)));
+  }
+
+  const metadata = [];
+  if (name) metadata.push(name);
+  if (hasExamDate) metadata.push(`Экзамен: ${formatDate(examDate)}`);
+  if (metadata.length) {
+    card.append(noteElement("p", "card-exam", metadata.join(" · ")));
+  }
+
   const list = noteElement(day.listType === "ordered" ? "ol" : day.listType === "unordered" ? "ul" : "div", "task-content");
   for (const task of day.tasks) list.append(noteElement(day.listType === "plain" || !day.listType ? "p" : "li", "", task));
   card.append(list);
@@ -107,7 +127,13 @@ function createNoteCard(plan, day, group) {
     actions.append(iconAction("Удалить навсегда", "trash", () => changeNoteState(plan, day, "delete")));
   } else {
     actions.append(iconAction("Открыть и редактировать", "edit", () => openNoteEditor(plan, day)));
-    actions.append(iconAction(noteState(day) === "archive" ? "Вернуть из архива" : "В архив", "archive", () => changeNoteState(plan, day, noteState(day) === "archive" ? "unarchive" : "archive")));
+    const archiveLabel = noteState(day) === "archive" ? "Вернуть из архива" : "В архив";
+    const archiveAction = noteState(day) === "archive" ? "unarchive" : "archive";
+    actions.append(iconAction(
+      archiveLabel,
+      "archive",
+      () => changeNoteState(plan, day, archiveAction)
+    ));
     actions.append(iconAction("В корзину", "trash", () => changeNoteState(plan, day, "trash")));
   }
   card.addEventListener("click", event => {
@@ -178,7 +204,7 @@ function openNoteEditor(plan, day) {
     label.append(input); editorForm.append(label);
     return input;
   }
-  const name = field("Название", "text", noteName(plan, day));
+  const name = field("Предмет (необязательно)", "text", noteName(plan, day));
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
   const error = noteElement("p", "note-error"); error.setAttribute("role", "status");
   editorForm.append(error);
@@ -193,7 +219,7 @@ function openNoteEditor(plan, day) {
   function commit(action) {
     clearTimeout(saveTimer);
     const parsed = parseTaskInput(tasks.value);
-    if (!name.value.trim() || !parsed.tasks.length) { error.textContent = "Заполните название и текст заметки."; return false; }
+    if (!parsed.tasks.length) { error.textContent = "Введите текст заметки."; return false; }
     Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
     if (!draft.reminder) delete day.reminder;
     if (action) { changeNoteState(plan, day, action); return true; }
@@ -218,11 +244,21 @@ function openNoteEditor(plan, day) {
     actions.append(noteButton("Восстановить", "Восстановить", () => changeNoteState(plan, day, "restore")));
     actions.append(noteButton("Удалить навсегда", "Удалить навсегда", () => changeNoteState(plan, day, "delete")));
   } else {
-    actions.append(iconAction(noteState(day) === "archive" ? "Вернуть из архива" : "В архив", "archive", () => commit(noteState(day) === "archive" ? "unarchive" : "archive")));
+    const archiveLabel = noteState(day) === "archive" ? "Вернуть из архива" : "В архив";
+    const archiveAction = noteState(day) === "archive" ? "unarchive" : "archive";
+    actions.append(iconAction(archiveLabel, "archive", () => commit(archiveAction)));
     actions.append(iconAction("В корзину", "trash", () => { if (commit()) changeNoteState(plan, day, "trash"); }));
   }
-  actions.append(noteButton("Закрыть", "Закрыть", () => { if (noteState(day) === "trash" || commit()) { closeNoteEditor(); renderPlan(); } }));
+  function closeEditor() {
+    if (noteState(day) !== "trash" && !commit()) return;
+    closeNoteEditor();
+    renderPlan();
+  }
+  actions.append(noteButton("Закрыть", "Закрыть", closeEditor));
   editorForm.append(actions); dialog.append(editorForm); document.body.append(dialog);
-  dialog.addEventListener("cancel", event => { event.preventDefault(); if (noteState(day) === "trash" || commit()) { closeNoteEditor(); renderPlan(); } });
+  dialog.addEventListener("cancel", event => {
+    event.preventDefault();
+    closeEditor();
+  });
   dialog.showModal(); name.focus();
 }

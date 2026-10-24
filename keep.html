@@ -11,10 +11,12 @@
   </script>
   <link rel="stylesheet" href="keep.css">
   <link rel="stylesheet" href="note-tools.css">
+  <script src="planner-core.js" defer></script>
   <script src="note-tools.js" defer></script>
   <script src="notes.js" defer></script>
   <script src="script.js" defer></script>
   <script src="keep.js" defer></script>
+  <script src="profile.js" defer></script>
 </head>
 <body>
   <svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -23,29 +25,71 @@
     <symbol id="grid-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
   </svg>
   <header class="topbar">
-    <button id="menu-toggle" class="icon-button" type="button" aria-label="Скрыть боковую панель" aria-expanded="true" aria-controls="sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <a class="brand" href="keep.html" aria-label="KSU — Учебные заметки"><span class="brand-icon"><svg aria-hidden="true"><use href="#bulb"/></svg></span><span class="brand-wordmark"><span class="brand-prefix">KSU</span><span>Учебные заметки</span></span></a>
-    <label class="search"><svg aria-hidden="true"><use href="#search-icon"/></svg><input id="search" type="search" placeholder="Поиск по задачам и датам" aria-label="Поиск по задачам и датам"></label>
-    <button id="view-toggle" class="icon-button" type="button" aria-label="Показать списком" aria-pressed="false" title="Переключить вид"><svg aria-hidden="true"><use href="#grid-icon"/></svg></button>
-    <button id="theme-toggle" class="icon-button" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Включить тёмную тему"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button>
-    <span class="avatar" title="Локальный план подготовки" aria-label="Локальный план подготовки">У</span>
+    <button id="menu-toggle" class="icon-button" type="button" aria-label="Скрыть боковую панель" aria-expanded="true" aria-controls="sidebar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <a class="brand" href="keep.html" aria-label="KSU — Учебные заметки">
+      <span class="brand-icon"><svg aria-hidden="true"><use href="#bulb"/></svg></span>
+      <span class="brand-wordmark"><span class="brand-prefix">KSU</span><span>Учебные заметки</span></span>
+    </a>
+    <label class="search">
+      <svg aria-hidden="true"><use href="#search-icon"/></svg>
+      <input id="search" type="search" placeholder="Поиск по задачам и датам" aria-label="Поиск по задачам и датам">
+    </label>
+    <button id="view-toggle" class="icon-button" type="button" aria-label="Показать списком" aria-pressed="false" title="Переключить вид">
+      <svg aria-hidden="true"><use href="#grid-icon"/></svg>
+    </button>
+    <button id="theme-toggle" class="icon-button" type="button" aria-label="Включить тёмную тему" aria-pressed="false" title="Включить тёмную тему">
+      <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg>
+    </button>
+    <button id="profile-toggle" class="avatar" type="button" title="Локальный профиль" aria-label="Открыть локальный профиль" aria-expanded="false" aria-controls="profile-menu">
+      У
+    </button>
+    <section id="profile-menu" class="profile-menu" aria-labelledby="profile-title" hidden>
+      <strong id="profile-title">Локальный профиль</strong>
+      <p>Имя хранится только в этом браузере.</p>
+      <label for="profile-name">Ваше имя</label>
+      <div class="profile-row">
+        <input id="profile-name" type="text" maxlength="40" placeholder="Ученик">
+        <button id="profile-save" type="button">Сохранить</button>
+      </div>
+      <p id="profile-status" role="status" aria-live="polite"></p>
+    </section>
   </header>
   <div class="workspace">
     <aside id="sidebar">
       <nav aria-label="Разделы">
-        <button class="nav-item active" type="button" data-view="active" aria-current="page"><svg aria-hidden="true"><use href="#bulb"/></svg>План подготовки</button>
-        <button class="nav-item" type="button" data-view="archive"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v13H4zM3 3h18v5H3zM9 12h6"/></svg>Архив</button>
-        <button class="nav-item" type="button" data-view="trash"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>Корзина</button>
+        <button class="nav-item active" type="button" data-view="active" aria-current="page">
+          <svg aria-hidden="true"><use href="#bulb"/></svg>
+          План подготовки
+        </button>
+        <button class="nav-item" type="button" data-view="archive">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v13H4zM3 3h18v5H3zM9 12h6"/></svg>
+          Архив
+        </button>
+        <button class="nav-item" type="button" data-view="trash">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg>
+          Корзина
+        </button>
       </nav>
       <p class="sidebar-caption">Маленькие шаги.<br>Большой результат.</p>
     </aside>
     <main>
       <section class="composer is-collapsed" aria-labelledby="composer-title">
-        <button id="composer-toggle" type="button" aria-expanded="false" aria-controls="planner-form"><span id="composer-title">К чему готовимся?</span></button>
+        <button id="composer-toggle" type="button" aria-expanded="false" aria-controls="planner-form">
+          <span id="composer-title">К чему готовимся?</span>
+        </button>
         <form id="planner-form" novalidate>
           <div class="exam-fields">
-            <div><label for="exam-name">Экзамен</label><input id="exam-name" type="text" placeholder="Название экзамена" required></div>
-            <div><label for="exam-date">Дата экзамена</label><input id="exam-date" type="date" required></div>
+            <div>
+              <label for="exam-name">Предмет (необязательно)</label>
+              <input id="exam-name" type="text" placeholder="Например, математика">
+            </div>
+            <div>
+              <label for="exam-date">Дата экзамена (необязательно)</label>
+              <input id="exam-date" type="date">
+            </div>
           </div>
           <label for="tasks">Что нужно изучить?</label>
           <textarea id="tasks" rows="3" placeholder="Текст заметки..." required></textarea>
