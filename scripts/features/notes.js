@@ -473,9 +473,10 @@ function openNoteEditor(plan, day) {
   }
   const name = field("Предмет (необязательно)", "text", noteName(plan, day));
   const examDate = field("Дата экзамена (необязательно)", "date", noteExamDate(plan, day));
+  const preparationDate = field("День подготовки (необязательно)", "date", day.date || "");
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
   function updateEditorHeading() {
-    const countdown = examCountdown(examDate.value, day.date);
+    const countdown = examCountdown(examDate.value, preparationDate.value);
     heading.textContent = countdown ? `${headingPrefix} ▪ ${countdown}` : headingPrefix;
   }
   updateEditorHeading();
@@ -502,7 +503,25 @@ function openNoteEditor(plan, day) {
       examDate.focus();
       return false;
     }
+    const selectedPreparationDay = calendarDay(preparationDate.value);
+    if (preparationDate.value && !Number.isFinite(selectedPreparationDay)) {
+      error.textContent = "Укажите корректный день подготовки или оставьте поле пустым.";
+      preparationDate.focus();
+      return false;
+    }
+    if (Number.isFinite(selectedExamDay) && Number.isFinite(selectedPreparationDay) && selectedPreparationDay >= selectedExamDay) {
+      error.textContent = "День подготовки должен быть раньше даты экзамена.";
+      preparationDate.focus();
+      return false;
+    }
     Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
+    if (preparationDate.value) {
+      day.date = preparationDate.value;
+      delete day.quickNote;
+    } else {
+      delete day.date;
+      day.quickNote = true;
+    }
     plan.examDate = examDate.value;
     for (const planDay of plan.days) delete planDay.examDate;
     if (!draft.reminder) delete day.reminder;
@@ -523,6 +542,10 @@ function openNoteEditor(plan, day) {
   if (noteState(day) !== "trash") {
     name.addEventListener("input", scheduleSave);
     examDate.addEventListener("input", () => {
+      updateEditorHeading();
+      scheduleSave();
+    });
+    preparationDate.addEventListener("input", () => {
       updateEditorHeading();
       scheduleSave();
     });
