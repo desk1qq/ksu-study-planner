@@ -668,7 +668,7 @@ function openNoteEditor(plan, day, originCard) {
   const editorForm = noteElement("form", "note-editor-form");
   editorForm.noValidate = true;
   const isTrashed = noteState(day) === "trash";
-  const headingPrefix = isTrashed ? "Заметка в корзине" : "Заметка";
+  const headingPrefix = isTrashed ? "Заметка в корзине" : "Учебная заметка";
   const heading = noteElement("h2");
   heading.id = "note-editor-title";
   editorForm.append(heading);
