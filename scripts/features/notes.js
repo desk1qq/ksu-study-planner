@@ -832,7 +832,7 @@ function openNoteEditor(plan, day, originCard) {
     }
     error.textContent = "";
     persist();
-    noteActionStatus.textContent = "Изменения сохранены автоматически.";
+    showTemporaryActionStatus("Изменения сохранены автоматически.", 3000);
     return true;
   }
   let saveTimer;
