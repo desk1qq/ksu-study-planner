@@ -707,8 +707,6 @@
   gap: 42px;
   margin: 18px 0 28px;
   padding: 18px 24px;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
 }
 
 .trash-controls p {
