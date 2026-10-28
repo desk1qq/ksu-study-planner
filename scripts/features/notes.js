@@ -561,7 +561,6 @@ function changeNoteState(plan, day, action) {
   if (action === "pin") {
     day.pinned = !day.pinned;
     if (day.pinned) day.state = "active";
-    status = day.pinned ? "Заметка закреплена." : "Заметка откреплена.";
   } else if (action === "archive") {
     day.state = "archive";
     day.pinned = false;
@@ -603,9 +602,11 @@ function changeNoteState(plan, day, action) {
       persist();
       renderPlan();
     });
+  } else if (action === "pin") {
+    clearTimeout(actionStatusTimer);
+    noteActionStatus.textContent = "";
   } else {
-    if (action === "pin") showTemporaryActionStatus(status);
-    else noteActionStatus.textContent = status;
+    noteActionStatus.textContent = status;
   }
   const next = [...planContainer.querySelectorAll(".day")].find(card => card.dataset.noteId === day.id);
   (next || document.querySelector(`[data-view="${currentNotesView}"]`)).focus({ preventScroll: true });
