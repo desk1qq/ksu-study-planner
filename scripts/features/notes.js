@@ -800,12 +800,16 @@ function openNoteEditor(plan, day, originCard) {
 
   function setEditorChecklistMode(enabled, { save = true, items = null } = {}) {
     if (!enabled) {
+      clearTimeout(saveTimer);
       checklistEditor?.remove();
       checklistEditor = null;
       taskField.classList.remove("is-checklist");
       tasks.hidden = false;
       draft.listType = "plain";
       delete draft.completed;
+      editorForm.querySelector('[data-tool="checklist"]')
+        ?.setAttribute("aria-pressed", "false");
+      error.textContent = "";
       if (save && tasks.value.trim()) scheduleSave();
       else tasks.focus();
       return;
@@ -820,6 +824,8 @@ function openNoteEditor(plan, day, originCard) {
         }));
     if (!checklistItems.length) checklistItems.push({ text: "", completed: false });
     draft.listType = "checklist";
+    editorForm.querySelector('[data-tool="checklist"]')
+      ?.setAttribute("aria-pressed", "true");
     checklistEditor?.remove();
     checklistEditor = noteElement("div", "editor-checklist");
     tasks.hidden = true;
@@ -863,14 +869,6 @@ function openNoteEditor(plan, day, originCard) {
         text.readOnly = isTrashed;
         text.addEventListener("input", () => {
           item.text = text.value;
-          if (!item.text && checklistItems.length > 1) {
-            checklistItems.splice(index, 1);
-            syncChecklistData();
-            renderChecklistEditor(Math.min(index, checklistItems.length - 1));
-            recordEditorState();
-            scheduleSave();
-            return;
-          }
           syncChecklistData();
           recordEditorState();
           scheduleSave();
@@ -1023,7 +1021,7 @@ function openNoteEditor(plan, day, originCard) {
       showTrashEditNotice();
     });
   }
-  function commit(action) {
+  function commit(action, { showSavedStatus = false } = {}) {
     clearTimeout(saveTimer);
     const parsed = parseTaskInput(tasks.value);
     if (!parsed.tasks.length) {
@@ -1071,7 +1069,9 @@ function openNoteEditor(plan, day, originCard) {
     }
     error.textContent = "";
     persist();
-    showTemporaryActionStatus("Изменения сохранены автоматически.", 3000);
+    if (showSavedStatus) {
+      showTemporaryActionStatus("Изменения сохранены автоматически.", 3000);
+    }
     return true;
   }
   let saveTimer;
@@ -1126,7 +1126,7 @@ function openNoteEditor(plan, day, originCard) {
       });
       return;
     }
-    if (noteState(day) !== "trash" && !commit()) return;
+    if (noteState(day) !== "trash" && !commit(undefined, { showSavedStatus: true })) return;
     closeNoteEditor(true, () => renderPlan({ animateCards: false }));
   }
   actions.append(noteButton("Закрыть", "Закрыть", closeEditor));
