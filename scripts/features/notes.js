@@ -118,7 +118,7 @@ function deleteNotePermanently(plan, day) {
   closeNoteEditor();
   persist();
   renderPlan();
-  noteActionStatus.textContent = "Заметка удалена навсегда.";
+  noteActionStatus.textContent = "Учебная задача удалена навсегда.";
   trashNavigationButton.focus({ preventScroll: true });
 }
 
@@ -382,14 +382,14 @@ function renderNoteCollection() {
     allEntries.filter(({ day }) => noteState(day) === currentNotesView)
   );
   summary.textContent = currentNotesView === "trash"
-    ? `Заметок: ${entries.length}. Можно восстановить или удалить навсегда.`
-    : `Заметок: ${entries.length}. Наведите на создание учебной заметки, чтобы открыть её.`;
+    ? `Учебных задач: ${entries.length}. Можно восстановить или удалить навсегда.`
+    : `Учебных задач: ${entries.length}. Наведите на создание учебной задачи, чтобы открыть форму.`;
   if (!entries.length) {
     const emptyText = currentNotesView === "archive"
       ? "В архиве пока пусто."
       : currentNotesView === "trash"
         ? "Корзина пуста."
-        : "Здесь появятся ваши заметки. Создайте план подготовки.";
+        : "Здесь появятся ваши учебные задачи. Создайте план подготовки.";
     planContainer.append(noteElement("p", "empty", emptyText));
     return;
   }
@@ -431,6 +431,40 @@ function iconAction(label, icon, action) {
 }
 
 function taskContainer(day) {
+  if (day.listType === "checklist") {
+    const container = noteElement("div", "task-content checklist-content");
+    const completed = Array.isArray(day.completed) ? day.completed : [];
+    const pendingGroup = noteElement("div", "checklist-group");
+    const completedGroup = noteElement("details", "checklist-completed");
+    completedGroup.open = true;
+    const completedCount = day.tasks.filter((_, index) => completed[index]).length;
+    completedGroup.append(noteElement("summary", "", `${completedCount} выполнено`));
+
+    day.tasks.forEach((task, index) => {
+      const done = completed[index] === true;
+      const row = noteElement("label", "checklist-item");
+      row.classList.toggle("is-completed", done);
+      row.addEventListener("click", event => event.stopPropagation());
+      const checkbox = noteElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = done;
+      checkbox.disabled = noteState(day) === "trash";
+      checkbox.setAttribute("aria-label", `${done ? "Отметить невыполненным" : "Отметить выполненным"}: ${task}`);
+      checkbox.addEventListener("change", () => {
+        day.completed = day.tasks.map((_, taskIndex) => completed[taskIndex] === true);
+        day.completed[index] = checkbox.checked;
+        persist();
+        renderPlan({ animateCards: false });
+      });
+      row.append(checkbox, noteElement("span", "", task));
+      (done ? completedGroup : pendingGroup).append(row);
+    });
+
+    container.append(pendingGroup);
+    if (completedCount) container.append(completedGroup);
+    return container;
+  }
+
   const listTag = day.listType === "ordered"
     ? "ol"
     : day.listType === "unordered"
@@ -462,7 +496,7 @@ function createNoteCard(plan, day, group) {
   if (suppressCardEntryAnimation) card.classList.add("skip-entry-animation");
   card.tabIndex = 0;
   card.draggable = currentNotesView === "active";
-  card.setAttribute("aria-label", `${name || "Заметка"}. Открыть.`);
+  card.setAttribute("aria-label", `${name || "Учебная задача"}. Открыть.`);
   if (card.draggable) card.title = "Перетащите, чтобы изменить порядок";
 
   if (hasDate && !day.quickNote) {
@@ -535,7 +569,7 @@ function createNoteCard(plan, day, group) {
     if (!draggedNote) return;
     event.preventDefault();
     saveVisibleNoteOrder();
-    noteActionStatus.textContent = "Порядок заметок сохранён.";
+    noteActionStatus.textContent = "Порядок учебных задач сохранён.";
   });
   card.addEventListener("dragend", () => {
     const changed = draggedNote === card;
@@ -564,24 +598,24 @@ function changeNoteState(plan, day, action) {
   } else if (action === "archive") {
     day.state = "archive";
     day.pinned = false;
-    status = "Заметка перемещена в архив.";
+    status = "Учебная задача перемещена в архив.";
     canUndo = true;
   } else if (action === "unarchive") {
     day.state = "active";
-    status = "Заметка возвращена из архива.";
+    status = "Учебная задача возвращена из архива.";
     canUndo = true;
   } else if (action === "trash") {
     day.previousState = "active";
     day.state = "trash";
     day.pinned = false;
     day.trashedAt = new Date().toISOString();
-    status = "Заметка перемещена в корзину.";
+    status = "Учебная задача перемещена в корзину.";
     canUndo = true;
   } else if (action === "restore") {
     day.state = "active";
     delete day.previousState;
     delete day.trashedAt;
-    status = "Заметка восстановлена в плане подготовки.";
+    status = "Учебная задача восстановлена в плане подготовки.";
     canUndo = true;
   } else if (action === "delete") {
     if (noteState(day) !== "trash") return false;
@@ -669,7 +703,7 @@ function openNoteEditor(plan, day, originCard) {
   const editorForm = noteElement("form", "note-editor-form");
   editorForm.noValidate = true;
   const isTrashed = noteState(day) === "trash";
-  const headingPrefix = isTrashed ? "Заметка в корзине" : "Учебная заметка";
+  const headingPrefix = isTrashed ? "Учебная задача в корзине" : "Учебная задача";
   const heading = noteElement("h2");
   heading.id = "note-editor-title";
   editorForm.append(heading);
@@ -692,7 +726,7 @@ function openNoteEditor(plan, day, originCard) {
     editorNoticeTimer = setTimeout(() => editorNotice.classList.remove("is-visible"), 4000);
   }
   function showTrashEditNotice() {
-    showEditorNotice("Чтобы внести изменения, восстановите учебную заметку из корзины.");
+    showEditorNotice("Чтобы внести изменения, восстановите учебную задачу из корзины.");
   }
   editorForm.showNotice = showEditorNotice;
   function field(title, type, value) {
@@ -756,6 +790,112 @@ function openNoteEditor(plan, day, originCard) {
   weekdayField.append(weekdayOptions);
   editorForm.append(weekdayField);
   const tasks = field("Текст", "textarea", formatTaskInput(day.tasks, day.listType));
+  const taskField = tasks.closest(".editor-field");
+  let checklistEditor = null;
+  let checklistItems = [];
+
+  function setEditorChecklistMode(enabled) {
+    if (!enabled) {
+      checklistEditor?.remove();
+      checklistEditor = null;
+      taskField.classList.remove("is-checklist");
+      tasks.hidden = false;
+      draft.listType = "plain";
+      delete draft.completed;
+      scheduleSave();
+      return;
+    }
+
+    const parsed = parseTaskInput(tasks.value);
+    checklistItems = parsed.tasks.map((text, index) => ({
+      text,
+      completed: draft.completed?.[index] === true
+    }));
+    if (!checklistItems.length) checklistItems.push({ text: "", completed: false });
+    draft.listType = "checklist";
+    checklistEditor?.remove();
+    checklistEditor = noteElement("div", "editor-checklist");
+    tasks.hidden = true;
+    taskField.classList.add("is-checklist");
+    taskField.append(checklistEditor);
+
+    function syncChecklistData() {
+      const filledItems = checklistItems.filter(item => item.text.trim());
+      tasks.value = filledItems.map(item => item.text.trim()).join("\n");
+      draft.completed = filledItems.map(item => item.completed);
+    }
+
+    function renderChecklistEditor(focusIndex = -1) {
+      checklistEditor.replaceChildren();
+      const pending = noteElement("div", "editor-checklist-group");
+      const completedItems = noteElement("details", "editor-checklist-completed");
+      const completedCount = checklistItems.filter(item => item.completed).length;
+      completedItems.open = true;
+      completedItems.append(noteElement("summary", "", `${completedCount} выполнено`));
+
+      checklistItems.forEach((item, index) => {
+        const row = noteElement("div", "editor-checklist-item");
+        row.dataset.checklistIndex = String(index);
+        row.classList.toggle("is-completed", item.completed);
+        const checkbox = noteElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = item.completed;
+        checkbox.disabled = isTrashed;
+        checkbox.setAttribute("aria-label", item.completed ? "Отметить невыполненным" : "Отметить выполненным");
+        checkbox.addEventListener("change", () => {
+          item.completed = checkbox.checked;
+          syncChecklistData();
+          renderChecklistEditor();
+          scheduleSave();
+        });
+        const text = noteElement("input");
+        text.type = "text";
+        text.value = item.text;
+        text.placeholder = "Пункт учебной задачи";
+        text.readOnly = isTrashed;
+        text.addEventListener("input", () => {
+          item.text = text.value;
+          syncChecklistData();
+          scheduleSave();
+        });
+        text.addEventListener("keydown", event => {
+          if (event.key !== "Enter" || isTrashed) return;
+          event.preventDefault();
+          checklistItems.splice(index + 1, 0, { text: "", completed: false });
+          renderChecklistEditor(index + 1);
+        });
+        row.append(checkbox, text);
+        (item.completed ? completedItems : pending).append(row);
+      });
+
+      checklistEditor.append(pending);
+      const addItem = noteButton("Добавить новый пункт", "+  Новый пункт", () => {
+        if (isTrashed) {
+          showTrashEditNotice();
+          return;
+        }
+        checklistItems.push({ text: "", completed: false });
+        renderChecklistEditor(checklistItems.length - 1);
+      });
+      addItem.classList.add("editor-checklist-add");
+      checklistEditor.append(addItem);
+      if (completedCount) checklistEditor.append(completedItems);
+      if (focusIndex >= 0) {
+        checklistEditor.querySelector(`[data-checklist-index="${focusIndex}"] input[type="text"]`)?.focus();
+      }
+    }
+
+    syncChecklistData();
+    renderChecklistEditor();
+  }
+  editorForm.toggleChecklistMode = () => {
+    if (isTrashed) {
+      showTrashEditNotice();
+      return;
+    }
+    setEditorChecklistMode(draft.listType !== "checklist");
+  };
+  if (draft.listType === "checklist") setEditorChecklistMode(true);
   function updateWeekdaySelection() {
     for (const button of weekdayButtons) {
       const selected = Number(button.dataset.weekday) === selectedPreparationWeekday;
@@ -795,7 +935,7 @@ function openNoteEditor(plan, day, originCard) {
     clearTimeout(saveTimer);
     const parsed = parseTaskInput(tasks.value);
     if (!parsed.tasks.length) {
-      error.textContent = "Введите текст заметки.";
+      error.textContent = "Введите текст учебной задачи.";
       return false;
     }
     const selectedExamDay = calendarDay(examDate.value);
@@ -815,7 +955,13 @@ function openNoteEditor(plan, day, originCard) {
       showEditorNotice(warning);
       return false;
     }
-    Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType: parsed.listType });
+    const listType = draft.listType === "checklist" ? "checklist" : parsed.listType;
+    const completed = listType === "checklist"
+      ? parsed.tasks.map((_, index) => draft.completed?.[index] === true)
+      : undefined;
+    Object.assign(day, draft, { name: name.value.trim(), tasks: parsed.tasks, listType });
+    if (completed) day.completed = completed;
+    else delete day.completed;
     if (preparationDate) {
       day.date = preparationDate;
       delete day.quickNote;
@@ -862,6 +1008,17 @@ function openNoteEditor(plan, day, originCard) {
     actions.append(iconAction("В корзину", "trash", () => { if (commit()) changeNoteState(plan, day, "trash"); }));
   }
   function closeEditor() {
+    if (noteState(day) !== "trash" && !name.value.trim() && !parseTaskInput(tasks.value).tasks.length) {
+      clearTimeout(saveTimer);
+      closeNoteEditor(true, () => {
+        plan.days = plan.days.filter(item => item !== day);
+        savedPlans = savedPlans.filter(item => item.days.length > 0);
+        persist();
+        renderPlan({ animateCards: false });
+        showNoteToast("Пустая учебная задача удалена.");
+      });
+      return;
+    }
     if (noteState(day) !== "trash" && !commit()) return;
     closeNoteEditor(true, () => renderPlan({ animateCards: false }));
   }

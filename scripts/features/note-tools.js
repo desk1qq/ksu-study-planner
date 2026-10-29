@@ -36,7 +36,8 @@ function noteIcon(kind) {
   const paths = {
     format: '<path d="m7 17 5-13 5 13M9 12h6M5 21h14"/>',
     palette: '<path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1-4 2 2 0 0 1 1-4h3a3 3 0 0 0 3-3c0-4-4-7-9-7Z"/><circle cx="7" cy="10" r=".7"/><circle cx="10" cy="6.5" r=".7"/><circle cx="15" cy="7" r=".7"/>',
-    bell: '<path d="M5 17h14l-2-3v-4a5 5 0 0 0-10 0v4l-2 3ZM10 20h4M12 3V2"/>'
+    bell: '<path d="M5 17h14l-2-3v-4a5 5 0 0 0-10 0v4l-2 3ZM10 20h4M12 3V2"/>',
+    checklist: '<path d="M4 6.5 5.5 8 8 5.5M11 7h9M4 12.5 5.5 14 8 11.5M11 13h9M4 18.5 5.5 20 8 17.5M11 19h9"/>'
   };
   const holder = noteElement("span");
   // Только постоянные SVG из кода; пользовательский текст сюда не попадает.
@@ -101,7 +102,7 @@ function automaticNoteColor(day) {
 
 function applyNoteAppearance(card, day) {
   const format = day.format || {};
-  const list = card.querySelector(".note-text") || card.querySelector(".task-content");
+  const list = card.querySelector(".editor-checklist") || card.querySelector(".note-text") || card.querySelector(".task-content");
   list.style.fontSize = format.size === "h1" ? "22px" : format.size === "h2" ? "18px" : "14px";
   list.style.fontWeight = format.bold ? "700" : "400";
   list.style.fontStyle = format.italic ? "italic" : "normal";
@@ -291,6 +292,22 @@ function attachNoteTools(card, day) {
     button.append(noteIcon(icon));
     toolbar.append(button);
   }
+  const checklistButton = noteButton("В виде списка", "", () => {
+    if (typeof card.toggleChecklistMode === "function") {
+      card.toggleChecklistMode();
+      checklistButton.setAttribute("aria-pressed", String(day.listType === "checklist"));
+      return;
+    }
+    const enabled = day.listType !== "checklist";
+    day.listType = enabled ? "checklist" : "plain";
+    if (enabled) day.completed = day.tasks.map(() => false);
+    else delete day.completed;
+    persist();
+    renderPlan({ animateCards: false });
+  });
+  checklistButton.setAttribute("aria-pressed", String(day.listType === "checklist"));
+  checklistButton.append(noteIcon("checklist"));
+  toolbar.append(checklistButton);
   card.append(toolbar);
   applyNoteAppearance(card, day);
   updateReminderBadge(card, day);

@@ -259,7 +259,7 @@
     transform: none;
   }
 }
-/* Заметки, разделы и редактор. */
+/* Учебные задачи, разделы и редактор. */
 .day {
   position: relative;
   cursor: pointer;
@@ -591,6 +591,70 @@
   flex: 1;
   min-height: 180px;
   resize: none;
+}
+.editor-field.is-checklist {
+  overflow: hidden;
+}
+.editor-checklist {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  overflow-y: auto;
+}
+.editor-checklist-group {
+  display: grid;
+  gap: 4px;
+}
+.editor-checklist-item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+.editor-checklist-item > input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--focus);
+}
+.editor-checklist-item > input[type="text"] {
+  margin: 0;
+  padding: 6px 4px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+}
+.editor-checklist-item > input[type="text"]:focus {
+  border-bottom-color: var(--focus);
+  box-shadow: none;
+}
+.editor-checklist-item.is-completed > input[type="text"] {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.editor-checklist-add.note-button {
+  justify-content: flex-start;
+  width: 100%;
+  height: 36px;
+  padding: 6px 28px;
+  color: var(--muted);
+  border-radius: 0;
+}
+.editor-checklist-completed {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.editor-checklist-completed summary {
+  margin-bottom: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
 }
 .editor-actions {
   display: flex;

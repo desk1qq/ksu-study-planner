@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Учебные заметки - План подготовки</title>
+  <title>Учебные задачи - План подготовки</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="shortcut icon" href="assets/favicon.svg">
   <script>
@@ -42,9 +42,9 @@
     <button id="menu-toggle" class="icon-button" type="button" aria-label="Свернуть боковую панель" aria-expanded="true" aria-controls="sidebar">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
-    <a class="brand" href="keep.html" aria-label="KSU - Учебные заметки">
+    <a class="brand" href="keep.html" aria-label="KSU - Учебные задачи">
       <span class="brand-icon"><svg aria-hidden="true"><use href="#bulb"/></svg></span>
-      <span class="brand-wordmark"><span class="brand-prefix">KSU</span><span>Учебные заметки</span></span>
+      <span class="brand-wordmark"><span class="brand-prefix">KSU</span><span>Учебные задачи</span></span>
     </a>
     <label class="search">
       <svg aria-hidden="true"><use href="#search-icon"/></svg>
@@ -119,22 +119,27 @@
             <small id="weekday-hint">Задачи попадут на выбранный день недели до экзамена.</small>
           </fieldset>
           <label for="tasks">Что нужно изучить?</label>
-          <textarea id="tasks" rows="3" placeholder="Текст заметки..." required></textarea>
-          <div class="composer-bottom"><button class="primary-button" type="submit">Составить план</button></div>
+          <textarea id="tasks" rows="3" placeholder="Текст учебной задачи..." required></textarea>
+          <div class="composer-bottom">
+            <button id="tasks-list-toggle" class="composer-tool-button" type="button" aria-label="В виде списка" title="В виде списка" aria-pressed="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 5.5 8 8 5.5M11 7h9M4 12.5 5.5 14 8 11.5M11 13h9M4 18.5 5.5 20 8 17.5M11 19h9"/></svg>
+            </button>
+            <button class="primary-button" type="submit">Составить план</button>
+          </div>
           <p id="message" role="status" aria-live="polite"></p>
           <p id="storage-message" role="status"></p>
         </form>
       </section>
       <section id="notes" aria-labelledby="notes-title">
         <p id="reminder-alert" role="status" aria-live="polite" hidden></p>
-        <div class="section-heading"><h2 id="notes-title">МОЙ ПЛАН</h2><span>Один день - одна заметка</span></div>
+        <div class="section-heading"><h2 id="notes-title">МОЙ ПЛАН</h2><span>Один день - одна учебная задача</span></div>
         <div id="trash-controls" class="trash-controls" hidden>
-          <p>Заметки удаляются из корзины через 7 дней.</p>
+          <p>Учебные задачи удаляются из корзины через 7 дней.</p>
           <button id="empty-trash" type="button">Очистить корзину</button>
         </div>
         <p id="plan-summary">Добавьте задачи - разложим подготовку по дням.</p>
         <p id="note-action-status" role="status" aria-live="polite"></p>
-        <div id="plan"><p class="empty">Ваши учебные заметки появятся здесь.<br>Начните с экзамена и нескольких задач.</p></div>
+        <div id="plan"><p class="empty">Ваши учебные задачи появятся здесь.<br>Начните с экзамена и нескольких задач.</p></div>
         <p id="no-results" hidden role="status">Ничего не найдено. Попробуйте другое слово.</p>
       </section>
       <p id="theme-status" role="status" aria-live="polite"></p>

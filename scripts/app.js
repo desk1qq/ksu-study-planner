@@ -13,11 +13,22 @@ const planContainer = document.getElementById("plan");
 const summary = document.getElementById("plan-summary");
 const composer = document.querySelector(".composer");
 const composerToggle = document.getElementById("composer-toggle");
+const tasksListToggle = document.getElementById("tasks-list-toggle");
 
 let savedPlans = [];
 let composerHoverPreview = false;
 let weekdayOrderInitialized = false;
 let suppressCardEntryAnimation = false;
+let composerListMode = false;
+
+function setComposerListMode(enabled) {
+  composerListMode = enabled;
+  tasksListToggle.setAttribute("aria-pressed", String(enabled));
+  tasksListToggle.classList.toggle("is-active", enabled);
+  tasksInput.placeholder = enabled
+    ? "Каждая строка станет отдельным пунктом..."
+    : "Текст учебной задачи...";
+}
 
 function showComposerError(text, focusTarget) {
   message.className = "error";
@@ -58,6 +69,7 @@ function persist() {
       date: dateInput.value,
       tasks: tasksInput.value,
       weekdays: selectedWeekdays(),
+      listMode: composerListMode,
       weekdayOrderInitialized,
       plans: savedPlans
     }));
@@ -88,6 +100,7 @@ function formatDate(value) {
 
 function clearComposerAfterSave() {
   form.reset();
+  setComposerListMode(false);
   message.textContent = "";
   message.className = "";
   document.getElementById("search").value = "";
@@ -132,6 +145,12 @@ function createNote({ strictDate = false } = {}) {
     return false;
   }
 
+  if (composerListMode) {
+    for (const day of days) {
+      day.listType = "checklist";
+      day.completed = day.tasks.map(() => false);
+    }
+  }
   const newPlan = { name, examDate: hasSchedule ? examDate : "", weekdays, days };
   savedPlans.push(newPlan);
   orderNotesAfterCreation();
@@ -139,7 +158,7 @@ function createNote({ strictDate = false } = {}) {
   renderPlan();
   persist();
   if (!examDate && typeof showNoteToast === "function") {
-    showNoteToast("Заметка создана без даты экзамена, календарное распределение не выполнено. Вы можете указать дату, открыв заметку.");
+    showNoteToast("Учебная задача создана без даты экзамена, календарное распределение не выполнено. Вы можете указать дату, открыв её.");
   }
   return true;
 }
@@ -172,6 +191,7 @@ function restore() {
     dateInput.value = data.date;
     tasksInput.value = data.tasks;
     restoreWeekdays(data.weekdays);
+    setComposerListMode(data.listMode === true);
     weekdayOrderInitialized = data.weekdayOrderInitialized === true;
 
     const plans = Array.isArray(data.plans)
@@ -221,6 +241,11 @@ composerToggle.addEventListener("click", () => {
   setComposerExpanded(true);
 });
 tasksInput.addEventListener("keydown", continueTaskList);
+tasksListToggle.addEventListener("click", () => {
+  setComposerListMode(!composerListMode);
+  persist();
+  tasksInput.focus();
+});
 
 form.addEventListener("input", () => {
   message.textContent = "";
@@ -232,7 +257,7 @@ form.addEventListener("submit", event => {
   event.preventDefault();
 
   if (!parseTaskInput(tasksInput.value).tasks.length) {
-    showComposerError("Введите текст заметки.", tasksInput);
+    showComposerError("Введите текст учебной задачи.", tasksInput);
     return;
   }
 
