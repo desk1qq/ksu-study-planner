@@ -49,6 +49,18 @@ function parseTaskInput(value) {
   return { tasks, listType };
 }
 
+function parseEditableTaskInput(value, currentListType) {
+  if (currentListType === "checklist") return parseTaskInput(value);
+
+  const parsed = parseTaskInput(value);
+  if (parsed.listType !== "plain") return parsed;
+
+  const lines = value.replace(/\r\n?/g, "\n").split("\n");
+  while (lines.length && !lines.at(-1).trim()) lines.pop();
+
+  return { tasks: lines, listType: "plain" };
+}
+
 function formatTaskInput(tasks, listType) {
   if (listType === "ordered") {
     return tasks.map((task, index) => `${index + 1}. ${task}`).join("\n");

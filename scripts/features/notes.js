@@ -797,6 +797,7 @@ function openNoteEditor(plan, day, originCard) {
   let editorHistory = [];
   let editorHistoryIndex = -1;
   let restoringEditorHistory = false;
+  let initialEditorSnapshot = "";
 
   function setEditorChecklistMode(enabled, { save = true, items = null } = {}) {
     if (!enabled) {
@@ -942,6 +943,20 @@ function openNoteEditor(plan, day, originCard) {
     });
   }
 
+  function editorContentSnapshot() {
+    const state = JSON.parse(editorSnapshot());
+    const parsedTasks = parseEditableTaskInput(state.tasks, state.draft.listType).tasks;
+    state.name = state.name.trim();
+    state.tasks = parsedTasks;
+    state.checklistItems = state.checklistItems
+      .filter(item => item.text.trim())
+      .map(item => ({ text: item.text.trim(), completed: item.completed === true }));
+    if (state.draft.listType === "checklist") {
+      state.draft.completed = state.checklistItems.map(item => item.completed);
+    }
+    return JSON.stringify(state);
+  }
+
   function recordEditorState() {
     if (restoringEditorHistory) return;
     const snapshot = editorSnapshot();
@@ -984,7 +999,6 @@ function openNoteEditor(plan, day, originCard) {
   }
 
   if (draft.listType === "checklist") setEditorChecklistMode(true, { save: false });
-  recordEditorState();
   function updateWeekdaySelection() {
     for (const button of weekdayButtons) {
       const selected = Number(button.dataset.weekday) === selectedPreparationWeekday;
@@ -1023,8 +1037,8 @@ function openNoteEditor(plan, day, originCard) {
   }
   function commit(action, { showSavedStatus = false } = {}) {
     clearTimeout(saveTimer);
-    const parsed = parseTaskInput(tasks.value);
-    if (!parsed.tasks.length) {
+    const parsed = parseEditableTaskInput(tasks.value, draft.listType);
+    if (!parsed.tasks.some(task => task.trim())) {
       error.textContent = "Введите текст учебной задачи.";
       return false;
     }
@@ -1126,7 +1140,8 @@ function openNoteEditor(plan, day, originCard) {
       });
       return;
     }
-    if (noteState(day) !== "trash" && !commit(undefined, { showSavedStatus: true })) return;
+    const hasChanges = editorContentSnapshot() !== initialEditorSnapshot;
+    if (noteState(day) !== "trash" && !commit(undefined, { showSavedStatus: hasChanges })) return;
     closeNoteEditor(true, () => renderPlan({ animateCards: false }));
   }
   actions.append(noteButton("Закрыть", "Закрыть", closeEditor));
@@ -1137,6 +1152,9 @@ function openNoteEditor(plan, day, originCard) {
     event.preventDefault();
     closeEditor();
   });
+  editorHistory = [editorSnapshot()];
+  editorHistoryIndex = 0;
+  initialEditorSnapshot = editorContentSnapshot();
   dialog.showModal();
   name.focus();
 }
