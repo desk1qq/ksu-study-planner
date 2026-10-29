@@ -114,6 +114,7 @@ function applyNoteAppearance(card, day) {
 
 function saveNoteOptions(card) {
   // В редакторе меняем черновик; запись произойдёт при автосохранении или закрытии.
+  if (typeof card.recordHistory === "function") card.recordHistory();
   if (!card.noteDraft) persist();
 }
 
@@ -305,6 +306,7 @@ function attachNoteTools(card, day) {
     persist();
     renderPlan({ animateCards: false });
   });
+  checklistButton.dataset.tool = "checklist";
   checklistButton.setAttribute("aria-pressed", String(day.listType === "checklist"));
   checklistButton.append(noteIcon("checklist"));
   toolbar.append(checklistButton);

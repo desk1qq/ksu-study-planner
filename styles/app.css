@@ -570,7 +570,7 @@ h2 {
   align-items: start;
   gap: 10px;
   color: var(--text);
-  cursor: pointer;
+  cursor: default;
   font-size: 14px;
   line-height: 1.5;
 }

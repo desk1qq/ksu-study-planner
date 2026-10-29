@@ -442,7 +442,7 @@ function taskContainer(day) {
 
     day.tasks.forEach((task, index) => {
       const done = completed[index] === true;
-      const row = noteElement("label", "checklist-item");
+      const row = noteElement("div", "checklist-item");
       row.classList.toggle("is-completed", done);
       row.addEventListener("click", event => event.stopPropagation());
       const checkbox = noteElement("input");
@@ -779,6 +779,7 @@ function openNoteEditor(plan, day, originCard) {
       error.textContent = "";
       updateWeekdaySelection();
       updateEditorHeading();
+      recordEditorState();
       scheduleSave();
     });
     button.classList.add("editor-weekday-option");
@@ -793,8 +794,11 @@ function openNoteEditor(plan, day, originCard) {
   const taskField = tasks.closest(".editor-field");
   let checklistEditor = null;
   let checklistItems = [];
+  let editorHistory = [];
+  let editorHistoryIndex = -1;
+  let restoringEditorHistory = false;
 
-  function setEditorChecklistMode(enabled) {
+  function setEditorChecklistMode(enabled, { save = true, items = null } = {}) {
     if (!enabled) {
       checklistEditor?.remove();
       checklistEditor = null;
@@ -802,15 +806,18 @@ function openNoteEditor(plan, day, originCard) {
       tasks.hidden = false;
       draft.listType = "plain";
       delete draft.completed;
-      scheduleSave();
+      if (save && tasks.value.trim()) scheduleSave();
+      else tasks.focus();
       return;
     }
 
     const parsed = parseTaskInput(tasks.value);
-    checklistItems = parsed.tasks.map((text, index) => ({
-      text,
-      completed: draft.completed?.[index] === true
-    }));
+    checklistItems = Array.isArray(items)
+      ? items.map(item => ({ text: item.text, completed: item.completed === true }))
+      : parsed.tasks.map((text, index) => ({
+          text,
+          completed: draft.completed?.[index] === true
+        }));
     if (!checklistItems.length) checklistItems.push({ text: "", completed: false });
     draft.listType = "checklist";
     checklistEditor?.remove();
@@ -846,6 +853,7 @@ function openNoteEditor(plan, day, originCard) {
           item.completed = checkbox.checked;
           syncChecklistData();
           renderChecklistEditor();
+          recordEditorState();
           scheduleSave();
         });
         const text = noteElement("input");
@@ -855,14 +863,40 @@ function openNoteEditor(plan, day, originCard) {
         text.readOnly = isTrashed;
         text.addEventListener("input", () => {
           item.text = text.value;
+          if (!item.text && checklistItems.length > 1) {
+            checklistItems.splice(index, 1);
+            syncChecklistData();
+            renderChecklistEditor(Math.min(index, checklistItems.length - 1));
+            recordEditorState();
+            scheduleSave();
+            return;
+          }
           syncChecklistData();
+          recordEditorState();
           scheduleSave();
         });
         text.addEventListener("keydown", event => {
-          if (event.key !== "Enter" || isTrashed) return;
+          if (isTrashed) return;
+          if (event.key === "Enter") {
+            event.preventDefault();
+            checklistItems.splice(index + 1, 0, { text: "", completed: false });
+            renderChecklistEditor(index + 1);
+            recordEditorState();
+            return;
+          }
+          if (event.key !== "Backspace" || text.value) return;
           event.preventDefault();
-          checklistItems.splice(index + 1, 0, { text: "", completed: false });
-          renderChecklistEditor(index + 1);
+          if (checklistItems.length === 1) {
+            syncChecklistData();
+            setEditorChecklistMode(false);
+            recordEditorState();
+            return;
+          }
+          checklistItems.splice(index, 1);
+          syncChecklistData();
+          renderChecklistEditor(Math.min(index, checklistItems.length - 1));
+          recordEditorState();
+          scheduleSave();
         });
         row.append(checkbox, text);
         (item.completed ? completedItems : pending).append(row);
@@ -876,6 +910,7 @@ function openNoteEditor(plan, day, originCard) {
         }
         checklistItems.push({ text: "", completed: false });
         renderChecklistEditor(checklistItems.length - 1);
+        recordEditorState();
       });
       addItem.classList.add("editor-checklist-add");
       checklistEditor.append(addItem);
@@ -894,8 +929,64 @@ function openNoteEditor(plan, day, originCard) {
       return;
     }
     setEditorChecklistMode(draft.listType !== "checklist");
+    recordEditorState();
   };
-  if (draft.listType === "checklist") setEditorChecklistMode(true);
+
+  function editorSnapshot() {
+    return JSON.stringify({
+      name: name.value,
+      examDate: examDate.value,
+      preparationDate,
+      selectedPreparationWeekday,
+      tasks: tasks.value,
+      draft,
+      checklistItems
+    });
+  }
+
+  function recordEditorState() {
+    if (restoringEditorHistory) return;
+    const snapshot = editorSnapshot();
+    if (editorHistory[editorHistoryIndex] === snapshot) return;
+    editorHistory.splice(editorHistoryIndex + 1);
+    editorHistory.push(snapshot);
+    if (editorHistory.length > 100) editorHistory.shift();
+    editorHistoryIndex = editorHistory.length - 1;
+  }
+
+  function restoreEditorState(snapshot) {
+    restoringEditorHistory = true;
+    const state = JSON.parse(snapshot);
+    name.value = state.name;
+    examDate.value = state.examDate;
+    preparationDate = state.preparationDate;
+    selectedPreparationWeekday = state.selectedPreparationWeekday;
+    tasks.value = state.tasks;
+    for (const key of Object.keys(draft)) delete draft[key];
+    Object.assign(draft, state.draft);
+    checklistItems = state.checklistItems;
+    setEditorChecklistMode(draft.listType === "checklist", {
+      save: false,
+      items: state.checklistItems
+    });
+    applyNoteAppearance(editorForm, draft);
+    editorForm.querySelector('[data-tool="checklist"]')
+      ?.setAttribute("aria-pressed", String(draft.listType === "checklist"));
+    updateWeekdaySelection();
+    updateEditorHeading();
+    restoringEditorHistory = false;
+    scheduleSave();
+  }
+
+  function moveEditorHistory(direction) {
+    const nextIndex = editorHistoryIndex + direction;
+    if (nextIndex < 0 || nextIndex >= editorHistory.length) return;
+    editorHistoryIndex = nextIndex;
+    restoreEditorState(editorHistory[editorHistoryIndex]);
+  }
+
+  if (draft.listType === "checklist") setEditorChecklistMode(true, { save: false });
+  recordEditorState();
   function updateWeekdaySelection() {
     for (const button of weekdayButtons) {
       const selected = Number(button.dataset.weekday) === selectedPreparationWeekday;
@@ -913,6 +1004,7 @@ function openNoteEditor(plan, day, originCard) {
   editorForm.append(error);
   if (noteState(day) !== "trash") {
     editorForm.noteDraft = true;
+    editorForm.recordHistory = recordEditorState;
     attachNoteTools(editorForm, draft);
     const pin = iconAction(day.pinned ? "Открепить" : "Закрепить", "pin", () => commit("pin"));
     pin.classList.add("editor-pin");
@@ -988,14 +1080,29 @@ function openNoteEditor(plan, day, originCard) {
     saveTimer = setTimeout(() => commit(), 250);
   }
   if (noteState(day) !== "trash") {
-    name.addEventListener("input", scheduleSave);
-    examDate.addEventListener("input", () => {
-      updateEditorHeading();
+    name.addEventListener("input", () => {
+      recordEditorState();
       scheduleSave();
     });
-    tasks.addEventListener("input", scheduleSave);
+    examDate.addEventListener("input", () => {
+      updateEditorHeading();
+      recordEditorState();
+      scheduleSave();
+    });
+    tasks.addEventListener("input", () => {
+      recordEditorState();
+      scheduleSave();
+    });
     tasks.addEventListener("keydown", continueTaskList);
   }
+  editorForm.addEventListener("keydown", event => {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+    const undo = event.code === "KeyZ" && !event.shiftKey;
+    const redo = event.code === "KeyY" || (event.code === "KeyZ" && event.shiftKey);
+    if (!undo && !redo) return;
+    event.preventDefault();
+    moveEditorHistory(undo ? -1 : 1);
+  }, true);
   editorForm.addEventListener("submit", event => event.preventDefault());
   const actions = noteElement("div", "editor-actions");
   if (noteState(day) === "trash") {
