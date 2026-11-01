@@ -129,11 +129,24 @@ function createNote({ strictDate = false } = {}) {
     return false;
   }
 
+  const checklistStudyDays = composerListMode && hasSchedule
+    ? studyDaysBetween(startDay, endDay, weekdays)
+    : [];
   const days = hasSchedule
-    ? distributeTasks(parsed.tasks, startDay, endDay, parsed.listType, weekdays)
+    ? composerListMode
+      ? checklistStudyDays.length
+        ? [{
+            date: dateString(checklistStudyDays[0]),
+            tasks: parsed.tasks,
+            listType: "checklist",
+            completed: parsed.tasks.map(() => false)
+          }]
+        : []
+      : distributeTasks(parsed.tasks, startDay, endDay, parsed.listType, weekdays)
     : [{
         tasks: parsed.tasks,
-        listType: parsed.listType,
+        listType: composerListMode ? "checklist" : parsed.listType,
+        completed: composerListMode ? parsed.tasks.map(() => false) : undefined,
         quickNote: true
       }];
 
@@ -145,12 +158,6 @@ function createNote({ strictDate = false } = {}) {
     return false;
   }
 
-  if (composerListMode) {
-    for (const day of days) {
-      day.listType = "checklist";
-      day.completed = day.tasks.map(() => false);
-    }
-  }
   const newPlan = { name, examDate: hasSchedule ? examDate : "", weekdays, days };
   savedPlans.push(newPlan);
   orderNotesAfterCreation();
